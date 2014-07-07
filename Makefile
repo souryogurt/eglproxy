@@ -1,6 +1,6 @@
 CC?=gcc
 CFLAGS?=-O0 -g --std=c89 -funsafe-loop-optimizations $(C_NINJA)
-CPPFLAGS=-I./inc
+CPPFLAGS=-I./inc -I/usr/local/include
 ARFLAGS?=rc
 RM?=rm -f
 
@@ -8,7 +8,7 @@ SOURCES = src/egl_glx.c
 OBJECTS = $(SOURCES:.c=.o)
 
 libeglproxy.a: $(OBJECTS)
-	$(AR) $(ARFLAGS) $@ $<
+	$(AR) $(ARFLAGS) $@ $(OBJECTS)
 
 $(OBJECTS): inc/EGL/egl.h inc/EGL/eglext.h inc/EGL/eglplatform.h \
 	inc/KHR/khrplatform.h
