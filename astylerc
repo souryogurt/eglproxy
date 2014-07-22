@@ -1,0 +1,25 @@
+#One True Brace style
+--style=1tbs
+
+#indent using 4 spaces per indent
+--indent=spaces=4
+
+#Attache brackets to a bracketed extern "C" statement
+--attach-extern-c
+
+#Indent 'switch' blocks
+--indent-switches
+
+#Insert space padding after paren headers only
+--pad-header
+
+#Insert space padding around the first parenthesis in a series on the outside only
+--pad-first-paren-out
+
+#insert spaces around operators
+--pad-oper
+
+#Attach a pointer to the name of variable
+--align-pointer=name
+
+--max-code-length=80
