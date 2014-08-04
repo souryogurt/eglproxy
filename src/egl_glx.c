@@ -170,12 +170,15 @@ typedef struct EGL_GLXSurface {
 } EGL_GLXSurface;
 
 typedef struct EGL_GLXDisplay {
+    struct EGL_GLXDisplay *next;
     PFNGLXCREATECONTEXTATTRIBSARBPROC glXCreateContextAttribsARB;
     Display *x11_display; /**< Connection to X11 display */
     EGL_GLXConfig *configs;
     EGL_GLXContext *contexts;
     EGL_GLXSurface *surfaces;
+    EGLNativeDisplayType display_id;
     EGLint n_configs;
+    EGLBoolean initialized;
     int screen; /**< Screen number where UGL where created */
     int glx_major; /**< Major version of glx */
     int glx_minor; /**< Minor version of glx */
@@ -186,31 +189,13 @@ typedef struct EGL_GLXDisplay {
     int is_arb_multisample; /**< Is GLX_ARB_multisample there */
 } EGL_GLXDisplay;
 
-#define DISPLAY_TABLE_SIZE 1
-static EGL_GLXDisplay *display_table[DISPLAY_TABLE_SIZE] = { NULL };
+static EGL_GLXDisplay *displays = NULL;
 
 static EGLenum CurrentAPI = EGL_NONE; /*TODO: Should be in TLS */
 
-#define CHECK_EGLDISPLAY(dpy) { \
-if (((EGL_GLXDisplay **)dpy < display_table) \
-      || ((EGL_GLXDisplay **)dpy >= &display_table[DISPLAY_TABLE_SIZE])) { \
-    eglSetError (EGL_BAD_DISPLAY); \
-    return EGL_FALSE; \
-} \
-}while(0)
-
-#define PEGLGLXDISPLAY(dpy) (*(EGL_GLXDisplay**)dpy)
-
-#define CHECK_EGLDISPLAY_INITIALIZED(dpy) { \
-if ((*(EGL_GLXDisplay**)dpy) == NULL) { \
-    eglSetError (EGL_NOT_INITIALIZED); \
-    return EGL_FALSE; \
-} \
-} while(0)
-
 #define CHECK_EGLCONFIG(dpy, config) { \
-if (((EGL_GLXConfig*)(config) < (*(EGL_GLXDisplay**)(dpy))->configs) || \
-    ((EGL_GLXConfig*)(config) >= &(*(EGL_GLXDisplay**)(dpy))->configs[(*(EGL_GLXDisplay**)(dpy))->n_configs])){ \
+if (((EGL_GLXConfig*)(config) < ((EGL_GLXDisplay*)(dpy))->configs) || \
+    ((EGL_GLXConfig*)(config) >= &((EGL_GLXDisplay*)(dpy))->configs[((EGL_GLXDisplay*)(dpy))->n_configs])){ \
     eglSetError (EGL_BAD_PARAMETER); \
     return EGL_FALSE; \
 } \
@@ -607,13 +592,21 @@ EGLBoolean EGLAPIENTRY eglChooseConfig (EGLDisplay dpy,
                                         EGLConfig *configs, EGLint config_size,
                                         EGLint *num_config)
 {
-    EGL_GLXDisplay *egl_display = NULL;
     ConfigQuery query = default_query;
     EGL_GLXConfigEntry *selected_configs = NULL;
     EGLint n_selected_configs = 0;
-    CHECK_EGLDISPLAY (dpy);
-    CHECK_EGLDISPLAY_INITIALIZED (dpy);
-    egl_display = PEGLGLXDISPLAY (dpy);
+    EGL_GLXDisplay *egl_display = displays;
+    while ((egl_display != NULL) && (egl_display != dpy)) {
+        egl_display = egl_display->next;
+    }
+    if (egl_display == NULL) {
+        eglSetError (EGL_BAD_DISPLAY);
+        return EGL_FALSE;
+    }
+    if (egl_display->initialized == EGL_FALSE) {
+        eglSetError (EGL_NOT_INITIALIZED);
+        return EGL_FALSE;
+    }
     if (num_config == NULL) {
         eglSetError (EGL_BAD_PARAMETER);
         return EGL_FALSE;
@@ -696,14 +689,22 @@ EGLContext EGLAPIENTRY eglCreateContext (EGLDisplay dpy, EGLConfig config,
         EGLContext share_context,
         const EGLint *attrib_list)
 {
-    EGL_GLXDisplay *egl_display = NULL;
     EGL_GLXConfig *egl_config = NULL;
     GLXContext context = NULL;
     ContextAttributes attributes = default_context_attributes;
-    CHECK_EGLDISPLAY (dpy);
-    CHECK_EGLDISPLAY_INITIALIZED (dpy);
+    EGL_GLXDisplay *egl_display = displays;
+    while ((egl_display != NULL) && (egl_display != dpy)) {
+        egl_display = egl_display->next;
+    }
+    if (egl_display == NULL) {
+        eglSetError (EGL_BAD_DISPLAY);
+        return EGL_NO_CONTEXT;
+    }
+    if (egl_display->initialized == EGL_FALSE) {
+        eglSetError (EGL_NOT_INITIALIZED);
+        return EGL_NO_CONTEXT;
+    }
     CHECK_EGLCONFIG (dpy, config);
-    egl_display = PEGLGLXDISPLAY (dpy);
     egl_config = (EGL_GLXConfig *)config;
     if (CurrentAPI == EGL_NONE) {
         eglSetError (EGL_BAD_MATCH);
@@ -787,12 +788,20 @@ EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config,
 {
     GLXDrawable drawable = (GLXDrawable)NULL;
     EGL_GLXSurface *egl_surface = NULL;
-    EGL_GLXDisplay *egl_display = NULL;
     EGL_GLXConfig *egl_config = NULL;
-    CHECK_EGLDISPLAY (dpy);
-    CHECK_EGLDISPLAY_INITIALIZED (dpy);
+    EGL_GLXDisplay *egl_display = displays;
+    while ((egl_display != NULL) && (egl_display != dpy)) {
+        egl_display = egl_display->next;
+    }
+    if (egl_display == NULL) {
+        eglSetError (EGL_BAD_DISPLAY);
+        return EGL_NO_SURFACE;
+    }
+    if (egl_display->initialized == EGL_FALSE) {
+        eglSetError (EGL_NOT_INITIALIZED);
+        return EGL_NO_SURFACE;
+    }
     CHECK_EGLCONFIG (dpy, config);
-    egl_display = PEGLGLXDISPLAY (dpy);
     egl_config = (EGL_GLXConfig *)config;
     if ((egl_config->surface_type & EGL_WINDOW_BIT) == 0) {
         eglSetError (EGL_BAD_MATCH);
@@ -835,14 +844,22 @@ EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config,
 
 EGLBoolean EGLAPIENTRY eglDestroyContext (EGLDisplay dpy, EGLContext ctx)
 {
-    EGL_GLXDisplay *egl_display = NULL;
     EGL_GLXContext *item = NULL;
     EGL_GLXContext *prev_item = NULL;
     EGL_GLXContext *egl_context = NULL;
-    CHECK_EGLDISPLAY (dpy);
-    CHECK_EGLDISPLAY_INITIALIZED (dpy);
+    EGL_GLXDisplay *egl_display = displays;
+    while ((egl_display != NULL) && (egl_display != dpy)) {
+        egl_display = egl_display->next;
+    }
+    if (egl_display == NULL) {
+        eglSetError (EGL_BAD_DISPLAY);
+        return EGL_FALSE;
+    }
+    if (egl_display->initialized == EGL_FALSE) {
+        eglSetError (EGL_NOT_INITIALIZED);
+        return EGL_FALSE;
+    }
     egl_context = (EGL_GLXContext *) ctx;
-    egl_display = PEGLGLXDISPLAY (dpy);
     for (item = egl_display->contexts; item != NULL;
             prev_item = item, item = item->next) {
         if (item == egl_context) {
@@ -863,14 +880,22 @@ EGLBoolean EGLAPIENTRY eglDestroyContext (EGLDisplay dpy, EGLContext ctx)
 
 EGLBoolean EGLAPIENTRY eglDestroySurface (EGLDisplay dpy, EGLSurface surface)
 {
-    EGL_GLXDisplay *egl_display = NULL;
     EGL_GLXSurface *item = NULL;
     EGL_GLXSurface *prev_item = NULL;
     EGL_GLXSurface *egl_surface = NULL;
-    CHECK_EGLDISPLAY (dpy);
-    CHECK_EGLDISPLAY_INITIALIZED (dpy);
+    EGL_GLXDisplay *egl_display = displays;
+    while ((egl_display != NULL) && (egl_display != dpy)) {
+        egl_display = egl_display->next;
+    }
+    if (egl_display == NULL) {
+        eglSetError (EGL_BAD_DISPLAY);
+        return EGL_FALSE;
+    }
+    if (egl_display->initialized == EGL_FALSE) {
+        eglSetError (EGL_NOT_INITIALIZED);
+        return EGL_FALSE;
+    }
     egl_surface = (EGL_GLXSurface *) surface;
-    egl_display = PEGLGLXDISPLAY (dpy);
     for (item = egl_display->surfaces; item != NULL;
             prev_item = item, item = item->next) {
         if (item == egl_surface) {
@@ -895,8 +920,18 @@ EGLBoolean EGLAPIENTRY eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config,
         EGLint attribute, EGLint *value)
 {
     EGL_GLXConfig *egl_config = NULL;
-    CHECK_EGLDISPLAY (dpy);
-    CHECK_EGLDISPLAY_INITIALIZED (dpy);
+    EGL_GLXDisplay *egl_display = displays;
+    while ((egl_display != NULL) && (egl_display != dpy)) {
+        egl_display = egl_display->next;
+    }
+    if (egl_display == NULL) {
+        eglSetError (EGL_BAD_DISPLAY);
+        return EGL_FALSE;
+    }
+    if (egl_display->initialized == EGL_FALSE) {
+        eglSetError (EGL_NOT_INITIALIZED);
+        return EGL_FALSE;
+    }
     CHECK_EGLCONFIG (dpy, config);
     egl_config = (EGL_GLXConfig *)config;
 
@@ -1011,11 +1046,51 @@ EGLBoolean EGLAPIENTRY eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config,
 
 EGLDisplay EGLAPIENTRY eglGetDisplay (EGLNativeDisplayType display_id)
 {
-    if (display_id != EGL_DEFAULT_DISPLAY) {
+    EGL_GLXDisplay *display = NULL;
+    Display *x11_display = NULL;
+    int screen = 0;
+    int glx_major = 0;
+    int glx_minor = 0;
+    display = displays;
+    while (display != NULL) {
+        if (display->display_id == display_id) {
+            eglSetError (EGL_SUCCESS);
+            return (EGLDisplay) display;
+        }
+        display = display->next;
+    }
+    if (display_id == EGL_DEFAULT_DISPLAY) {
+        x11_display = XOpenDisplay ((char *)NULL);
+        if (x11_display == NULL) {
+            return EGL_NO_DISPLAY;
+        }
+        screen = DefaultScreen (x11_display);
+    } else {
+        /* TODO: parse attributes
+         * Should set x11_display and screen
+         */
         return EGL_NO_DISPLAY;
     }
-    eglSetError (EGL_SUCCESS);
-    return (EGLDisplay)&display_table[0];
+    if (glXQueryVersion (x11_display, &glx_major, &glx_minor) == True) {
+        if ((glx_major > 1) || ((glx_major == 1) && (glx_minor >= 2))) {
+            display = (EGL_GLXDisplay *) calloc (1, sizeof (EGL_GLXDisplay));
+            if (display != NULL) {
+                display->display_id = display_id;
+                display->x11_display = x11_display;
+                display->screen = screen;
+                display->glx_major = glx_major;
+                display->glx_minor = glx_minor;
+                display->next = displays;
+                displays = display;
+                eglSetError (EGL_SUCCESS);
+                return (EGLDisplay) display;
+            }
+        }
+    }
+    if (display_id == EGL_DEFAULT_DISPLAY) {
+        XCloseDisplay (x11_display);
+    }
+    return EGL_NO_DISPLAY;
 }
 
 /** Check that extension is in a list
@@ -1354,65 +1429,40 @@ static EGLBoolean allocate_configs (EGL_GLXDisplay *egl_display)
 EGLBoolean EGLAPIENTRY eglInitialize (EGLDisplay dpy, EGLint *major,
                                       EGLint *minor)
 {
-    CHECK_EGLDISPLAY (dpy);
-    if (PEGLGLXDISPLAY (dpy) == NULL) {
-        int glx_major = 0;
-        int glx_minor = 0;
-        EGL_GLXDisplay *egl_display = NULL;
+    EGL_GLXDisplay *egl_display = displays;
+    while ((egl_display != NULL) && (egl_display != dpy)) {
+        egl_display = egl_display->next;
+    }
+    if (egl_display == NULL) {
+        eglSetError (EGL_BAD_DISPLAY);
+        return EGL_FALSE;
+    }
+    if (egl_display->initialized != EGL_TRUE) {
+        const char *extensions = NULL;
+        egl_display->is_modern = ((egl_display->glx_major == 1)
+                                  && (egl_display->glx_minor > 2)) ||
+                                 (egl_display->glx_major > 1);
+        /* Check available GLX extensions */
+        extensions = glXQueryExtensionsString (egl_display->x11_display,
+                                               egl_display->screen);
 
-        Display *display = XOpenDisplay ((char *)NULL);
-        if (display == NULL) {
-            eglSetError (EGL_NOT_INITIALIZED);
-            return EGL_FALSE;
+        if (is_extension_supported (extensions, "GLX_ARB_create_context")) {
+            egl_display->glXCreateContextAttribsARB =
+                (PFNGLXCREATECONTEXTATTRIBSARBPROC)
+                glXGetProcAddressARB ((const GLubyte *)"glXCreateContextAttribsARB");
+            egl_display->is_arb_context_profile = is_extension_supported (extensions,
+                                                  "GLX_ARB_create_context_profile");
         }
-        /* Check the glx version */
-        if (glXQueryVersion (display, &glx_major, &glx_minor) == False) {
-            XCloseDisplay (display);
-            eglSetError (EGL_NOT_INITIALIZED);
-            return EGL_FALSE;
-        }
-        if ((glx_major < 1) || ((glx_major == 1) && (glx_minor < 2))) {
-            XCloseDisplay (display);
-            eglSetError (EGL_NOT_INITIALIZED);
-            return EGL_FALSE;
-        }
-        egl_display = (EGL_GLXDisplay *)calloc (1, sizeof (EGL_GLXDisplay));
-        if (egl_display) {
-            const char *extensions = NULL;
-            egl_display->x11_display = display;
-            egl_display->screen = DefaultScreen (display);
-            egl_display->glx_major = glx_major;
-            egl_display->glx_minor = glx_minor;
-            egl_display->is_modern = ((glx_major == 1) && (glx_minor > 2)) ||
-                                     (glx_major > 1);
-            /* Check available GLX extensions */
-            extensions = glXQueryExtensionsString (egl_display->x11_display,
-                                                   egl_display->screen);
-
-            if (is_extension_supported (extensions, "GLX_ARB_create_context")) {
-                egl_display->glXCreateContextAttribsARB =
-                    (PFNGLXCREATECONTEXTATTRIBSARBPROC)
-                    glXGetProcAddressARB ((const GLubyte *)"glXCreateContextAttribsARB");
-                egl_display->is_arb_context_profile = is_extension_supported (extensions,
-                                                      "GLX_ARB_create_context_profile");
-            }
-            egl_display->is_ext_visual_rating = is_extension_supported (
-                                                    extensions,
-                                                    "GLX_EXT_visual_rating");
-            egl_display->is_ext_visual_info = is_extension_supported (
-                                                  extensions,
-                                                  "GLX_EXT_visual_info");
-            egl_display->is_arb_multisample = is_extension_supported (
-                                                  extensions,
-                                                  "GLX_ARB_multisample");
-            if (allocate_configs (egl_display) != EGL_TRUE) {
-                XCloseDisplay (display);
-                free (egl_display);
-                eglSetError (EGL_NOT_INITIALIZED);
-                return EGL_FALSE;
-            }
-            PEGLGLXDISPLAY (dpy) = egl_display;
-        } else {
+        egl_display->is_ext_visual_rating = is_extension_supported (
+                                                extensions,
+                                                "GLX_EXT_visual_rating");
+        egl_display->is_ext_visual_info = is_extension_supported (
+                                              extensions,
+                                              "GLX_EXT_visual_info");
+        egl_display->is_arb_multisample = is_extension_supported (
+                                              extensions,
+                                              "GLX_ARB_multisample");
+        if (allocate_configs (egl_display) != EGL_TRUE) {
             eglSetError (EGL_NOT_INITIALIZED);
             return EGL_FALSE;
         }
@@ -1420,6 +1470,7 @@ EGLBoolean EGLAPIENTRY eglInitialize (EGLDisplay dpy, EGLint *major,
 
     *major = 1;
     *minor = 5;
+    egl_display->initialized = EGL_TRUE;
     eglSetError (EGL_SUCCESS);
     return EGL_TRUE;
 }
@@ -1427,17 +1478,25 @@ EGLBoolean EGLAPIENTRY eglInitialize (EGLDisplay dpy, EGLint *major,
 EGLBoolean EGLAPIENTRY eglMakeCurrent (EGLDisplay dpy, EGLSurface draw,
                                        EGLSurface read, EGLContext ctx)
 {
-    EGL_GLXDisplay *egl_display = NULL;
     EGL_GLXSurface *egl_draw = (EGL_GLXSurface *) draw;
     EGL_GLXSurface *egl_read = (EGL_GLXSurface *) read;
     EGL_GLXContext *egl_context = (EGL_GLXContext *) ctx;
     GLXDrawable x11_draw = (GLXDrawable)NULL;
     GLXDrawable x11_read = (GLXDrawable)NULL;
     GLXContext x11_context = (GLXContext)NULL;
-    CHECK_EGLDISPLAY (dpy);
-    egl_display = PEGLGLXDISPLAY (dpy);
+    EGL_GLXDisplay *egl_display = displays;
+    while ((egl_display != NULL) && (egl_display != dpy)) {
+        egl_display = egl_display->next;
+    }
+    if (egl_display == NULL) {
+        eglSetError (EGL_BAD_DISPLAY);
+        return EGL_FALSE;
+    }
     if (ctx != EGL_NO_CONTEXT || draw != EGL_NO_SURFACE || read != EGL_NO_SURFACE) {
-        CHECK_EGLDISPLAY_INITIALIZED (dpy);
+        if (egl_display->initialized == EGL_FALSE) {
+            eglSetError (EGL_NOT_INITIALIZED);
+            return EGL_FALSE;
+        }
     }
     if (ctx == EGL_NO_CONTEXT) {
         if (draw != EGL_NO_SURFACE || read != EGL_NO_SURFACE) {
@@ -1468,8 +1527,18 @@ EGLBoolean EGLAPIENTRY eglMakeCurrent (EGLDisplay dpy, EGLSurface draw,
 
 const char *EGLAPIENTRY eglQueryString (EGLDisplay dpy, EGLint name)
 {
-    CHECK_EGLDISPLAY (dpy);
-    CHECK_EGLDISPLAY_INITIALIZED (dpy);
+    EGL_GLXDisplay *egl_display = displays;
+    while ((egl_display != NULL) && (egl_display != dpy)) {
+        egl_display = egl_display->next;
+    }
+    if (egl_display == NULL) {
+        eglSetError (EGL_BAD_DISPLAY);
+        return NULL;
+    }
+    if (egl_display->initialized == EGL_FALSE) {
+        eglSetError (EGL_NOT_INITIALIZED);
+        return NULL;
+    }
     switch (name) {
         case EGL_CLIENT_APIS:
             return "OpenGL";
@@ -1488,39 +1557,48 @@ const char *EGLAPIENTRY eglQueryString (EGLDisplay dpy, EGLint name)
 EGLBoolean EGLAPIENTRY eglSwapBuffers (EGLDisplay dpy, EGLSurface surface)
 {
     EGL_GLXSurface *egl_surface = (EGL_GLXSurface *) surface;
-    EGL_GLXDisplay *egl_display = NULL;
-    CHECK_EGLDISPLAY (dpy);
-    CHECK_EGLDISPLAY_INITIALIZED (dpy);
-    egl_display = PEGLGLXDISPLAY (dpy);
+    EGL_GLXDisplay *egl_display = displays;
+    while ((egl_display != NULL) && (egl_display != dpy)) {
+        egl_display = egl_display->next;
+    }
+    if (egl_display == NULL) {
+        eglSetError (EGL_BAD_DISPLAY);
+        return EGL_FALSE;
+    }
+    if (egl_display->initialized == EGL_FALSE) {
+        eglSetError (EGL_NOT_INITIALIZED);
+        return EGL_FALSE;
+    }
     glXSwapBuffers (egl_display->x11_display, egl_surface->drawable);
     return EGL_TRUE;
 }
 
 EGLBoolean EGLAPIENTRY eglTerminate (EGLDisplay dpy)
 {
-    EGL_GLXDisplay *egl_display = NULL;
-    CHECK_EGLDISPLAY (dpy);
-    egl_display = PEGLGLXDISPLAY (dpy);
-    if (egl_display != NULL) {
-        while (egl_display->contexts != NULL) {
-            EGL_GLXContext *context = egl_display->contexts;
-            egl_display->contexts = egl_display->contexts->next;
-            glXDestroyContext (egl_display->x11_display, context->ctx);
-            free (context);
-        }
-        while (egl_display->surfaces != NULL) {
-            EGL_GLXSurface *surface = egl_display->surfaces;
-            egl_display->surfaces = egl_display->surfaces->next;
-            if (egl_display->is_modern) {
-                glXDestroyWindow (egl_display->x11_display, surface->drawable);
-            }
-            free (surface);
-        }
-        XCloseDisplay (egl_display->x11_display);
-        free (egl_display->configs);
-        free (egl_display);
-        PEGLGLXDISPLAY (dpy) = NULL;
+    EGL_GLXDisplay *egl_display = displays;
+    while ((egl_display != NULL) && (egl_display != dpy)) {
+        egl_display = egl_display->next;
     }
+    if (egl_display == NULL) {
+        eglSetError (EGL_BAD_DISPLAY);
+        return EGL_FALSE;
+    }
+    while (egl_display->contexts != NULL) {
+        EGL_GLXContext *context = egl_display->contexts;
+        egl_display->contexts = egl_display->contexts->next;
+        glXDestroyContext (egl_display->x11_display, context->ctx);
+        free (context);
+    }
+    while (egl_display->surfaces != NULL) {
+        EGL_GLXSurface *surface = egl_display->surfaces;
+        egl_display->surfaces = egl_display->surfaces->next;
+        if (egl_display->is_modern) {
+            glXDestroyWindow (egl_display->x11_display, surface->drawable);
+        }
+        free (surface);
+    }
+    free (egl_display->configs);
+    egl_display->initialized = EGL_FALSE;
     eglSetError (EGL_SUCCESS);
     return EGL_TRUE;
 }
@@ -1533,10 +1611,18 @@ EGLint EGLAPIENTRY eglGetError (void)
 EGLBoolean EGLAPIENTRY eglGetConfigs (EGLDisplay dpy, EGLConfig *configs,
                                       EGLint config_size, EGLint *num_config)
 {
-    EGL_GLXDisplay *egl_display = NULL;
-    CHECK_EGLDISPLAY (dpy);
-    CHECK_EGLDISPLAY_INITIALIZED (dpy);
-    egl_display = PEGLGLXDISPLAY (dpy);
+    EGL_GLXDisplay *egl_display = displays;
+    while ((egl_display != NULL) && (egl_display != dpy)) {
+        egl_display = egl_display->next;
+    }
+    if (egl_display == NULL) {
+        eglSetError (EGL_BAD_DISPLAY);
+        return EGL_FALSE;
+    }
+    if (egl_display->initialized == EGL_FALSE) {
+        eglSetError (EGL_NOT_INITIALIZED);
+        return EGL_FALSE;
+    }
     if (num_config == NULL) {
         eglSetError (EGL_BAD_PARAMETER);
         return EGL_FALSE;
