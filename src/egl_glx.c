@@ -158,10 +158,10 @@ static const ContextAttributes default_context_attributes = {
     EGL_NO_RESET_NOTIFICATION /* EGL_CONTEXT_OPENGL_RESET_NOTIFICATION_STRATEGY */
 };
 
-typedef struct EGL_GLXContext {
-    GLXContext ctx;
-    struct EGL_GLXContext *next;
-} EGL_GLXContext;
+typedef struct EGLProxyContext {
+    void *platform;
+    struct EGLProxyContext *next;
+} EGLProxyContext;
 
 typedef struct EGL_GLXSurface {
     GLXDrawable drawable;
@@ -185,7 +185,7 @@ typedef struct PlatformDisplay {
 typedef struct EGLProxyDisplay {
     struct EGLProxyDisplay *next;
     EGLProxyConfig *configs;
-    EGL_GLXContext *contexts;
+    EGLProxyContext *contexts;
     EGL_GLXSurface *surfaces;
     PlatformDisplay *platform;
     EGLNativeDisplayType display_id;
@@ -207,8 +207,8 @@ if (((EGLProxyConfig*)(config) < ((EGLProxyDisplay*)(dpy))->configs) || \
 
 #define UNUSED(x) (void)(x)
 
-static GLXContext platform_create_context (PlatformDisplay *display,
-        EGLProxyConfig *egl_config, ContextAttributes *attributes)
+static void *platform_create_context (PlatformDisplay *display,
+                                      EGLProxyConfig *egl_config, ContextAttributes *attributes)
 {
     GLXContext context = NULL;
     if (display->is_modern) {
@@ -250,9 +250,9 @@ static GLXContext platform_create_context (PlatformDisplay *display,
 }
 
 static void platform_context_destroy (PlatformDisplay *display,
-                                      GLXContext context)
+                                      void *context)
 {
-    glXDestroyContext (display->x11_display, context);
+    glXDestroyContext (display->x11_display, (GLXContext)context);
 }
 
 static GLXDrawable platform_window_surface_create (PlatformDisplay *display,
@@ -672,11 +672,11 @@ static EGLint platform_display_initialize (PlatformDisplay *display,
 }
 
 static EGLBoolean platform_make_current (PlatformDisplay *display,
-        EGL_GLXSurface *draw, EGL_GLXSurface *read, EGL_GLXContext *ctx)
+        EGL_GLXSurface *draw, EGL_GLXSurface *read, EGLProxyContext *ctx)
 {
     GLXDrawable x11_draw = draw ? draw->drawable : (GLXDrawable)NULL;
     GLXDrawable x11_read = read ? read->drawable : (GLXDrawable)NULL;
-    GLXContext x11_context = ctx ? ctx->ctx : (GLXContext)NULL;
+    GLXContext x11_context = ctx ? (GLXContext) ctx->platform : (GLXContext) NULL;
     if (display->is_modern) {
         return glXMakeContextCurrent (display->x11_display, x11_draw, x11_read,
                                       x11_context) == True ? EGL_TRUE : EGL_FALSE;
@@ -1179,7 +1179,7 @@ EGLContext EGLAPIENTRY eglCreateContext (EGLDisplay dpy, EGLConfig config,
         const EGLint *attrib_list)
 {
     EGLProxyConfig *egl_config = NULL;
-    GLXContext context = NULL;
+    EGLProxyContext *egl_context = NULL;
     ContextAttributes attributes = default_context_attributes;
     EGLProxyDisplay *egl_display = displays;
     while ((egl_display != NULL) && (egl_display != dpy)) {
@@ -1217,19 +1217,17 @@ EGLContext EGLAPIENTRY eglCreateContext (EGLDisplay dpy, EGLConfig config,
         eglSetError (EGL_BAD_ATTRIBUTE);
         return EGL_NO_CONTEXT;
     }
-    context = platform_create_context (egl_display->platform, egl_config,
-                                       &attributes);
-    if (context != NULL) {
-        EGL_GLXContext *egl_context = (EGL_GLXContext *)
-                                      malloc (sizeof (EGL_GLXContext));
-        if (egl_context != NULL) {
-            egl_context->ctx = context;
+    egl_context = (EGLProxyContext *) malloc (sizeof (EGLProxyContext));
+    if (egl_context != NULL) {
+        egl_context->platform = platform_create_context (egl_display->platform,
+                                egl_config, &attributes);
+        if (egl_context->platform != NULL) {
             egl_context->next = egl_display->contexts;
             egl_display->contexts = egl_context;
             eglSetError (EGL_SUCCESS);
             return (EGLContext) egl_context;
         }
-        platform_context_destroy (egl_display->platform, context);
+        free (egl_context);
     }
     eglSetError (EGL_BAD_ALLOC);
     return EGL_NO_CONTEXT;
@@ -1293,9 +1291,9 @@ EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config,
 
 EGLBoolean EGLAPIENTRY eglDestroyContext (EGLDisplay dpy, EGLContext ctx)
 {
-    EGL_GLXContext *item = NULL;
-    EGL_GLXContext *prev_item = NULL;
-    EGL_GLXContext *egl_context = NULL;
+    EGLProxyContext *item = NULL;
+    EGLProxyContext *prev_item = NULL;
+    EGLProxyContext *egl_context = NULL;
     EGLProxyDisplay *egl_display = displays;
     while ((egl_display != NULL) && (egl_display != dpy)) {
         egl_display = egl_display->next;
@@ -1308,7 +1306,7 @@ EGLBoolean EGLAPIENTRY eglDestroyContext (EGLDisplay dpy, EGLContext ctx)
         eglSetError (EGL_NOT_INITIALIZED);
         return EGL_FALSE;
     }
-    egl_context = (EGL_GLXContext *) ctx;
+    egl_context = (EGLProxyContext *) ctx;
     for (item = egl_display->contexts; item != NULL;
             prev_item = item, item = item->next) {
         if (item == egl_context) {
@@ -1317,7 +1315,7 @@ EGLBoolean EGLAPIENTRY eglDestroyContext (EGLDisplay dpy, EGLContext ctx)
             } else {
                 prev_item->next = item->next;
             }
-            platform_context_destroy (egl_display->platform, item->ctx);
+            platform_context_destroy (egl_display->platform, item->platform);
             free (item);
             eglSetError (EGL_SUCCESS);
             return EGL_TRUE;
@@ -1551,7 +1549,7 @@ EGLBoolean EGLAPIENTRY eglMakeCurrent (EGLDisplay dpy, EGLSurface draw,
 {
     EGL_GLXSurface *egl_draw = (EGL_GLXSurface *) draw;
     EGL_GLXSurface *egl_read = (EGL_GLXSurface *) read;
-    EGL_GLXContext *egl_context = (EGL_GLXContext *) ctx;
+    EGLProxyContext *egl_context = (EGLProxyContext *) ctx;
     EGLProxyDisplay *egl_display = displays;
     while ((egl_display != NULL) && (egl_display != dpy)) {
         egl_display = egl_display->next;
@@ -1641,9 +1639,9 @@ EGLBoolean EGLAPIENTRY eglTerminate (EGLDisplay dpy)
         return EGL_FALSE;
     }
     while (egl_display->contexts != NULL) {
-        EGL_GLXContext *context = egl_display->contexts;
+        EGLProxyContext *context = egl_display->contexts;
         egl_display->contexts = egl_display->contexts->next;
-        platform_context_destroy (egl_display->platform, context->ctx);
+        platform_context_destroy (egl_display->platform, context->platform);
         free (context);
     }
     while (egl_display->surfaces != NULL) {
