@@ -276,7 +276,6 @@ static void platform_window_surface_destroy (PlatformDisplay *display,
 
 static PlatformDisplay *platform_display_create (EGLNativeDisplayType id)
 {
-    PlatformDisplay *display = NULL;
     Display *x11_display = NULL;
     int screen = 0;
     int glx_major = 0;
@@ -295,7 +294,8 @@ static PlatformDisplay *platform_display_create (EGLNativeDisplayType id)
     }
     if (glXQueryVersion (x11_display, &glx_major, &glx_minor) == True) {
         if ((glx_major > 1) || ((glx_major == 1) && (glx_minor >= 2))) {
-            display = (PlatformDisplay *) calloc (1, sizeof (PlatformDisplay));
+            PlatformDisplay *display = (PlatformDisplay *) calloc (1,
+                                       sizeof (PlatformDisplay));
             if (display != NULL) {
                 display->x11_display = x11_display;
                 display->screen = screen;
@@ -473,7 +473,6 @@ static EGLint glx_populate_from_visualinfos (PlatformDisplay *display,
         EGL_GLXConfig **config_list)
 {
     int n_configs = 0;
-    int err = 0;
     int value = 0;
     int current_config = 0;
     XVisualInfo info_template;
@@ -490,6 +489,7 @@ static EGLint glx_populate_from_visualinfos (PlatformDisplay *display,
         return 0;
     }
     while (n_configs > 0) {
+        int err = 0;
         n_configs--;
         info = &infos[n_configs];
         egl_config = & (*config_list)[current_config];
