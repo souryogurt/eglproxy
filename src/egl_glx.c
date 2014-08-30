@@ -22,8 +22,8 @@ typedef GLXContext ( *PFNGLXCREATECONTEXTATTRIBSARBPROC) (Display *dpy,
         const int *attrib_list);
 #endif /* GLX_ARB_create_context */
 
-typedef struct EGL_GLXConfig {
-    GLXFBConfig fb_config;
+typedef struct EGLProxyConfig {
+    void *platform;
     EGLint buffer_size;
     EGLint red_size;
     EGLint green_size;
@@ -57,16 +57,16 @@ typedef struct EGL_GLXConfig {
     EGLint transparent_red_value;
     EGLint transparent_green_value;
     EGLint transparent_blue_value;
-} EGL_GLXConfig;
+} EGLProxyConfig;
 
-typedef struct EGL_GLXConfigEntry {
-    EGL_GLXConfig *config;
+typedef struct EGLProxyConfigEntry {
+    EGLProxyConfig *config;
     EGLint caveat;
     EGLint buffer_type;
     EGLint n_colorbits;
-} EGL_GLXConfigEntry;
+} EGLProxyConfigEntry;
 
-typedef struct ConfigQuery {
+typedef struct EGLConfigQuery {
     EGLint buffer_size;
     EGLint red_size;
     EGLint green_size;
@@ -100,9 +100,9 @@ typedef struct ConfigQuery {
     EGLint max_pbuffer_width;
     EGLint max_pbuffer_height;
     EGLint max_pbuffer_pixels;
-} ConfigQuery;
+} EGLConfigQuery;
 
-static const ConfigQuery default_query = {
+static const EGLConfigQuery default_query = {
     0, /* EGL_BUFFER_SIZE */
     0, /* EGL_RED_SIZE */
     0, /* EGL_GREEN_SIZE */
@@ -184,7 +184,7 @@ typedef struct PlatformDisplay {
 
 typedef struct EGLProxyDisplay {
     struct EGLProxyDisplay *next;
-    EGL_GLXConfig *configs;
+    EGLProxyConfig *configs;
     EGL_GLXContext *contexts;
     EGL_GLXSurface *surfaces;
     PlatformDisplay *platform;
@@ -198,8 +198,8 @@ static EGLProxyDisplay *displays = NULL;
 static EGLenum CurrentAPI = EGL_NONE; /*TODO: Should be in TLS */
 
 #define CHECK_EGLCONFIG(dpy, config) { \
-if (((EGL_GLXConfig*)(config) < ((EGLProxyDisplay*)(dpy))->configs) || \
-    ((EGL_GLXConfig*)(config) >= &((EGLProxyDisplay*)(dpy))->configs[((EGLProxyDisplay*)(dpy))->n_configs])){ \
+if (((EGLProxyConfig*)(config) < ((EGLProxyDisplay*)(dpy))->configs) || \
+    ((EGLProxyConfig*)(config) >= &((EGLProxyDisplay*)(dpy))->configs[((EGLProxyDisplay*)(dpy))->n_configs])){ \
     eglSetError (EGL_BAD_PARAMETER); \
     return EGL_FALSE; \
 } \
@@ -208,11 +208,11 @@ if (((EGL_GLXConfig*)(config) < ((EGLProxyDisplay*)(dpy))->configs) || \
 #define UNUSED(x) (void)(x)
 
 static GLXContext platform_create_context (PlatformDisplay *display,
-        EGL_GLXConfig *egl_config, ContextAttributes *attributes)
+        EGLProxyConfig *egl_config, ContextAttributes *attributes)
 {
     GLXContext context = NULL;
     if (display->is_modern) {
-        GLXFBConfig glx_config = egl_config->fb_config;
+        GLXFBConfig glx_config = (GLXFBConfig) egl_config->platform;
         if (display->glXCreateContextAttribsARB) {
             int context_attribs[] = {
                 GLX_CONTEXT_MAJOR_VERSION_ARB, 1,
@@ -256,10 +256,10 @@ static void platform_context_destroy (PlatformDisplay *display,
 }
 
 static GLXDrawable platform_window_surface_create (PlatformDisplay *display,
-        EGL_GLXConfig *egl_config, EGLNativeWindowType win)
+        EGLProxyConfig *egl_config, EGLNativeWindowType win)
 {
     if (display->is_modern) {
-        GLXFBConfig glx_config = egl_config->fb_config;
+        GLXFBConfig glx_config = (GLXFBConfig) egl_config->platform;
         return glXCreateWindow (display->x11_display, glx_config, win,
                                 NULL);
     }
@@ -318,17 +318,17 @@ static void platform_display_destroy (EGLNativeDisplayType id,
 }
 
 static EGLint glx_populate_from_fbconfigs (PlatformDisplay *display,
-        EGL_GLXConfig **config_list)
+        EGLProxyConfig **config_list)
 {
     int value;
     int n_configs = 0;
     int current_config = 0;
-    EGL_GLXConfig *egl_config = NULL;
+    EGLProxyConfig *egl_config = NULL;
     GLXFBConfig glx_config;
     GLXFBConfig *glx_configs = glXGetFBConfigs (display->x11_display,
                                display->screen, &n_configs);
-    EGL_GLXConfig *list = (EGL_GLXConfig *) calloc ((size_t)n_configs,
-                          sizeof (EGL_GLXConfig));
+    EGLProxyConfig *list = (EGLProxyConfig *) calloc ((size_t)n_configs,
+                           sizeof (EGLProxyConfig));
     if (list == NULL) {
         return 0;
     }
@@ -337,7 +337,7 @@ static EGLint glx_populate_from_fbconfigs (PlatformDisplay *display,
         n_configs--;
         glx_config = glx_configs[n_configs];
         egl_config = list;
-        egl_config->fb_config = glx_config;
+        egl_config->platform = glx_config;
         glXGetFBConfigAttrib (display->x11_display, glx_config, GLX_RENDER_TYPE,
                               &value);
         value &= GLX_RGBA_BIT;
@@ -470,7 +470,7 @@ static EGLint glx_populate_from_fbconfigs (PlatformDisplay *display,
 }
 
 static EGLint glx_populate_from_visualinfos (PlatformDisplay *display,
-        EGL_GLXConfig **config_list)
+        EGLProxyConfig **config_list)
 {
     int n_configs = 0;
     int value = 0;
@@ -478,12 +478,12 @@ static EGLint glx_populate_from_visualinfos (PlatformDisplay *display,
     XVisualInfo info_template;
     XVisualInfo *infos = NULL;
     XVisualInfo *info;
-    EGL_GLXConfig *egl_config = NULL;
+    EGLProxyConfig *egl_config = NULL;
     info_template.screen = display->screen;
     infos = XGetVisualInfo (display->x11_display, VisualScreenMask,
                             &info_template, &n_configs);
-    *config_list = (EGL_GLXConfig *) calloc ((size_t)n_configs,
-                   sizeof (EGL_GLXConfig));
+    *config_list = (EGLProxyConfig *) calloc ((size_t)n_configs,
+                   sizeof (EGLProxyConfig));
     if (*config_list == NULL) {
         XFree (infos);
         return 0;
@@ -639,7 +639,7 @@ static int is_extension_supported (const char *ext_string, const char *ext)
 }
 
 static EGLint platform_display_initialize (PlatformDisplay *display,
-        EGL_GLXConfig **config_list)
+        EGLProxyConfig **config_list)
 {
     const char *extensions = NULL;
     display->is_modern = ((display->glx_major == 1) && (display->glx_minor > 2))
@@ -711,8 +711,8 @@ EGLBoolean EGLAPIENTRY eglBindAPI (EGLenum api)
 
 static int config_comparator (const void *lvalue, const void *rvalue)
 {
-    const EGL_GLXConfigEntry *lcfg = (const EGL_GLXConfigEntry *) lvalue;
-    const EGL_GLXConfigEntry *rcfg = (const EGL_GLXConfigEntry *) rvalue;
+    const EGLProxyConfigEntry *lcfg = (const EGLProxyConfigEntry *) lvalue;
+    const EGLProxyConfigEntry *rcfg = (const EGLProxyConfigEntry *) rvalue;
     if (lcfg->caveat < rcfg->caveat) {
         return +1;
     } else if (lcfg->caveat > rcfg->caveat) {
@@ -787,13 +787,13 @@ static int config_comparator (const void *lvalue, const void *rvalue)
 }
 
 static EGLint select_config (EGLProxyDisplay *egl_display,
-                             EGL_GLXConfigEntry *selected,
-                             const ConfigQuery *query)
+                             EGLProxyConfigEntry *selected,
+                             const EGLConfigQuery *query)
 {
     EGLint n_selected = 0;
     EGLint i;
     for (i = 0; (i < egl_display->n_configs); i++) {
-        EGL_GLXConfig *cfg = &egl_display->configs[i];
+        EGLProxyConfig *cfg = &egl_display->configs[i];
         selected[n_selected].n_colorbits = 0;
         if ((query->config_id != EGL_DONT_CARE)
                 && (cfg->config_id != query->config_id)) {
@@ -954,7 +954,7 @@ static EGLint select_config (EGLProxyDisplay *egl_display,
     return n_selected;
 }
 
-static int  fill_query (ConfigQuery *query, const EGLint *attrib_list)
+static int  fill_query (EGLConfigQuery *query, const EGLint *attrib_list)
 {
     size_t i = 0;
     if (attrib_list == NULL) {
@@ -1081,8 +1081,8 @@ EGLBoolean EGLAPIENTRY eglChooseConfig (EGLDisplay dpy,
                                         EGLConfig *configs, EGLint config_size,
                                         EGLint *num_config)
 {
-    ConfigQuery query = default_query;
-    EGL_GLXConfigEntry *selected_configs = NULL;
+    EGLConfigQuery query = default_query;
+    EGLProxyConfigEntry *selected_configs = NULL;
     EGLint n_selected_configs = 0;
     EGLProxyDisplay *egl_display = displays;
     while ((egl_display != NULL) && (egl_display != dpy)) {
@@ -1105,9 +1105,9 @@ EGLBoolean EGLAPIENTRY eglChooseConfig (EGLDisplay dpy,
         eglSetError (EGL_BAD_PARAMETER);
         return EGL_FALSE;
     }
-    selected_configs = (EGL_GLXConfigEntry *) calloc ((size_t)
+    selected_configs = (EGLProxyConfigEntry *) calloc ((size_t)
                        egl_display->n_configs,
-                       sizeof (EGL_GLXConfigEntry));
+                       sizeof (EGLProxyConfigEntry));
     n_selected_configs = select_config (egl_display, selected_configs, &query);
     if ((configs == NULL) || (n_selected_configs == 0)) {
         *num_config = n_selected_configs;
@@ -1117,7 +1117,7 @@ EGLBoolean EGLAPIENTRY eglChooseConfig (EGLDisplay dpy,
     }
 
     qsort (selected_configs, (size_t) n_selected_configs,
-           sizeof (EGL_GLXConfigEntry),
+           sizeof (EGLProxyConfigEntry),
            config_comparator);
 
     for (*num_config = 0; ((*num_config < config_size) &&
@@ -1178,7 +1178,7 @@ EGLContext EGLAPIENTRY eglCreateContext (EGLDisplay dpy, EGLConfig config,
         EGLContext share_context,
         const EGLint *attrib_list)
 {
-    EGL_GLXConfig *egl_config = NULL;
+    EGLProxyConfig *egl_config = NULL;
     GLXContext context = NULL;
     ContextAttributes attributes = default_context_attributes;
     EGLProxyDisplay *egl_display = displays;
@@ -1194,7 +1194,7 @@ EGLContext EGLAPIENTRY eglCreateContext (EGLDisplay dpy, EGLConfig config,
         return EGL_NO_CONTEXT;
     }
     CHECK_EGLCONFIG (dpy, config);
-    egl_config = (EGL_GLXConfig *)config;
+    egl_config = (EGLProxyConfig *)config;
     if (CurrentAPI == EGL_NONE) {
         eglSetError (EGL_BAD_MATCH);
         return EGL_NO_CONTEXT;
@@ -1241,7 +1241,7 @@ EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config,
 {
     GLXDrawable drawable = (GLXDrawable)NULL;
     EGL_GLXSurface *egl_surface = NULL;
-    EGL_GLXConfig *egl_config = NULL;
+    EGLProxyConfig *egl_config = NULL;
     EGLProxyDisplay *egl_display = displays;
     while ((egl_display != NULL) && (egl_display != dpy)) {
         egl_display = egl_display->next;
@@ -1255,7 +1255,7 @@ EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config,
         return EGL_NO_SURFACE;
     }
     CHECK_EGLCONFIG (dpy, config);
-    egl_config = (EGL_GLXConfig *)config;
+    egl_config = (EGLProxyConfig *)config;
     if ((egl_config->surface_type & EGL_WINDOW_BIT) == 0) {
         eglSetError (EGL_BAD_MATCH);
         return EGL_NO_SURFACE;
@@ -1366,7 +1366,7 @@ EGLBoolean EGLAPIENTRY eglDestroySurface (EGLDisplay dpy, EGLSurface surface)
 EGLBoolean EGLAPIENTRY eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config,
         EGLint attribute, EGLint *value)
 {
-    EGL_GLXConfig *egl_config = NULL;
+    EGLProxyConfig *egl_config = NULL;
     EGLProxyDisplay *egl_display = displays;
     while ((egl_display != NULL) && (egl_display != dpy)) {
         egl_display = egl_display->next;
@@ -1380,7 +1380,7 @@ EGLBoolean EGLAPIENTRY eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config,
         return EGL_FALSE;
     }
     CHECK_EGLCONFIG (dpy, config);
-    egl_config = (EGL_GLXConfig *)config;
+    egl_config = (EGLProxyConfig *)config;
 
     if (value == NULL) {
         eglSetError (EGL_BAD_PARAMETER);
