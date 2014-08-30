@@ -163,11 +163,11 @@ typedef struct EGLProxyContext {
     struct EGLProxyContext *next;
 } EGLProxyContext;
 
-typedef struct EGL_GLXSurface {
-    GLXDrawable drawable;
-    Window window;
-    struct EGL_GLXSurface *next;
-} EGL_GLXSurface;
+typedef struct EGLProxySurface {
+    void *platform;
+    EGLNativeWindowType window;
+    struct EGLProxySurface *next;
+} EGLProxySurface;
 
 typedef struct PlatformDisplay {
     PFNGLXCREATECONTEXTATTRIBSARBPROC glXCreateContextAttribsARB;
@@ -186,7 +186,7 @@ typedef struct EGLProxyDisplay {
     struct EGLProxyDisplay *next;
     EGLProxyConfig *configs;
     EGLProxyContext *contexts;
-    EGL_GLXSurface *surfaces;
+    EGLProxySurface *surfaces;
     PlatformDisplay *platform;
     EGLNativeDisplayType display_id;
     EGLint n_configs;
@@ -255,22 +255,22 @@ static void platform_context_destroy (PlatformDisplay *display,
     glXDestroyContext (display->x11_display, (GLXContext)context);
 }
 
-static GLXDrawable platform_window_surface_create (PlatformDisplay *display,
+static void *platform_window_surface_create (PlatformDisplay *display,
         EGLProxyConfig *egl_config, EGLNativeWindowType win)
 {
+    GLXDrawable result = win;
     if (display->is_modern) {
         GLXFBConfig glx_config = (GLXFBConfig) egl_config->platform;
-        return glXCreateWindow (display->x11_display, glx_config, win,
-                                NULL);
+        result = glXCreateWindow (display->x11_display, glx_config, win, NULL);
     }
-    return (GLXDrawable) win;
+    return (void *) result;
 }
 
 static void platform_window_surface_destroy (PlatformDisplay *display,
-        GLXDrawable drawable)
+        void *drawable)
 {
     if (display->is_modern) {
-        glXDestroyWindow (display->x11_display, drawable);
+        glXDestroyWindow (display->x11_display, (GLXDrawable) drawable);
     }
 }
 
@@ -477,7 +477,6 @@ static EGLint glx_populate_from_visualinfos (PlatformDisplay *display,
     int current_config = 0;
     XVisualInfo info_template;
     XVisualInfo *infos = NULL;
-    XVisualInfo *info;
     EGLProxyConfig *egl_config = NULL;
     info_template.screen = display->screen;
     infos = XGetVisualInfo (display->x11_display, VisualScreenMask,
@@ -490,8 +489,8 @@ static EGLint glx_populate_from_visualinfos (PlatformDisplay *display,
     }
     while (n_configs > 0) {
         int err = 0;
+        XVisualInfo *info = &infos[n_configs];
         n_configs--;
-        info = &infos[n_configs];
         egl_config = & (*config_list)[current_config];
         err = glXGetConfig (display->x11_display, info, GLX_USE_GL, &value);
         if (err != 0 || value == False) {
@@ -612,7 +611,7 @@ static EGLint glx_populate_from_visualinfos (PlatformDisplay *display,
         }
         current_config++;
     }
-    XFree (info);
+    XFree (infos);
     return current_config;
 }
 
@@ -672,10 +671,10 @@ static EGLint platform_display_initialize (PlatformDisplay *display,
 }
 
 static EGLBoolean platform_make_current (PlatformDisplay *display,
-        EGL_GLXSurface *draw, EGL_GLXSurface *read, EGLProxyContext *ctx)
+        EGLProxySurface *draw, EGLProxySurface *read, EGLProxyContext *ctx)
 {
-    GLXDrawable x11_draw = draw ? draw->drawable : (GLXDrawable)NULL;
-    GLXDrawable x11_read = read ? read->drawable : (GLXDrawable)NULL;
+    GLXDrawable x11_draw = draw ? (GLXDrawable) draw->platform : (GLXDrawable)NULL;
+    GLXDrawable x11_read = read ? (GLXDrawable) read->platform : (GLXDrawable)NULL;
     GLXContext x11_context = ctx ? (GLXContext) ctx->platform : (GLXContext) NULL;
     if (display->is_modern) {
         return glXMakeContextCurrent (display->x11_display, x11_draw, x11_read,
@@ -686,9 +685,9 @@ static EGLBoolean platform_make_current (PlatformDisplay *display,
 }
 
 static EGLBoolean platform_swap_buffers (PlatformDisplay *display,
-        EGL_GLXSurface *surface)
+        EGLProxySurface *surface)
 {
-    glXSwapBuffers (display->x11_display, surface->drawable);
+    glXSwapBuffers (display->x11_display, (GLXDrawable) surface->platform);
     return EGL_TRUE;
 }
 
@@ -1237,8 +1236,7 @@ EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config,
         EGLNativeWindowType win,
         const EGLint *attrib_list)
 {
-    GLXDrawable drawable = (GLXDrawable)NULL;
-    EGL_GLXSurface *egl_surface = NULL;
+    EGLProxySurface *egl_surface = NULL;
     EGLProxyConfig *egl_config = NULL;
     EGLProxyDisplay *egl_display = displays;
     while ((egl_display != NULL) && (egl_display != dpy)) {
@@ -1272,19 +1270,19 @@ EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config,
             return EGL_NO_SURFACE;
         }
     }
-    drawable = platform_window_surface_create (egl_display->platform, egl_config,
-               win);
-
-    egl_surface = (EGL_GLXSurface *) malloc (sizeof (EGL_GLXSurface));
+    egl_surface = (EGLProxySurface *) malloc (sizeof (EGLProxySurface));
     if (egl_surface != NULL) {
-        egl_surface->next = egl_display->surfaces;
-        egl_display->surfaces = egl_surface;
-        egl_surface->drawable = drawable;
-        egl_surface->window = (Window) win;
-        eglSetError (EGL_SUCCESS);
-        return (EGLSurface)egl_surface;
+        egl_surface->platform = platform_window_surface_create (egl_display->platform,
+                                egl_config, win);
+        if (egl_surface->platform) {
+            egl_surface->next = egl_display->surfaces;
+            egl_display->surfaces = egl_surface;
+            egl_surface->window = (Window) win;
+            eglSetError (EGL_SUCCESS);
+            return (EGLSurface)egl_surface;
+        }
+        free (egl_surface);
     }
-    platform_window_surface_destroy (egl_display->platform, drawable);
     eglSetError (EGL_BAD_ALLOC);
     return EGL_NO_SURFACE;
 }
@@ -1327,9 +1325,9 @@ EGLBoolean EGLAPIENTRY eglDestroyContext (EGLDisplay dpy, EGLContext ctx)
 
 EGLBoolean EGLAPIENTRY eglDestroySurface (EGLDisplay dpy, EGLSurface surface)
 {
-    EGL_GLXSurface *item = NULL;
-    EGL_GLXSurface *prev_item = NULL;
-    EGL_GLXSurface *egl_surface = NULL;
+    EGLProxySurface *item = NULL;
+    EGLProxySurface *prev_item = NULL;
+    EGLProxySurface *egl_surface = NULL;
     EGLProxyDisplay *egl_display = displays;
     while ((egl_display != NULL) && (egl_display != dpy)) {
         egl_display = egl_display->next;
@@ -1342,7 +1340,7 @@ EGLBoolean EGLAPIENTRY eglDestroySurface (EGLDisplay dpy, EGLSurface surface)
         eglSetError (EGL_NOT_INITIALIZED);
         return EGL_FALSE;
     }
-    egl_surface = (EGL_GLXSurface *) surface;
+    egl_surface = (EGLProxySurface *) surface;
     for (item = egl_display->surfaces; item != NULL;
             prev_item = item, item = item->next) {
         if (item == egl_surface) {
@@ -1351,7 +1349,7 @@ EGLBoolean EGLAPIENTRY eglDestroySurface (EGLDisplay dpy, EGLSurface surface)
             } else {
                 prev_item->next = item->next;
             }
-            platform_window_surface_destroy (egl_display->platform, item->drawable);
+            platform_window_surface_destroy (egl_display->platform, item->platform);
             free (item);
             eglSetError (EGL_SUCCESS);
             return EGL_TRUE;
@@ -1547,8 +1545,8 @@ EGLBoolean EGLAPIENTRY eglInitialize (EGLDisplay dpy, EGLint *major,
 EGLBoolean EGLAPIENTRY eglMakeCurrent (EGLDisplay dpy, EGLSurface draw,
                                        EGLSurface read, EGLContext ctx)
 {
-    EGL_GLXSurface *egl_draw = (EGL_GLXSurface *) draw;
-    EGL_GLXSurface *egl_read = (EGL_GLXSurface *) read;
+    EGLProxySurface *egl_draw = (EGLProxySurface *) draw;
+    EGLProxySurface *egl_read = (EGLProxySurface *) read;
     EGLProxyContext *egl_context = (EGLProxyContext *) ctx;
     EGLProxyDisplay *egl_display = displays;
     while ((egl_display != NULL) && (egl_display != dpy)) {
@@ -1612,7 +1610,7 @@ const char *EGLAPIENTRY eglQueryString (EGLDisplay dpy, EGLint name)
 
 EGLBoolean EGLAPIENTRY eglSwapBuffers (EGLDisplay dpy, EGLSurface surface)
 {
-    EGL_GLXSurface *egl_surface = (EGL_GLXSurface *) surface;
+    EGLProxySurface *egl_surface = (EGLProxySurface *) surface;
     EGLProxyDisplay *egl_display = displays;
     while ((egl_display != NULL) && (egl_display != dpy)) {
         egl_display = egl_display->next;
@@ -1645,9 +1643,9 @@ EGLBoolean EGLAPIENTRY eglTerminate (EGLDisplay dpy)
         free (context);
     }
     while (egl_display->surfaces != NULL) {
-        EGL_GLXSurface *surface = egl_display->surfaces;
+        EGLProxySurface *surface = egl_display->surfaces;
         egl_display->surfaces = egl_display->surfaces->next;
-        platform_window_surface_destroy (egl_display->platform, surface->drawable);
+        platform_window_surface_destroy (egl_display->platform, surface->platform);
         free (surface);
     }
     free (egl_display->configs);
