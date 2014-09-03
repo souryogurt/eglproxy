@@ -1068,7 +1068,7 @@ EGLBoolean EGLAPIENTRY eglTerminate (EGLDisplay dpy)
 
 EGLint EGLAPIENTRY eglGetError (void)
 {
-    return EGL_CONTEXT_LOST;
+    return EGL_SUCCESS;
 }
 
 EGLBoolean EGLAPIENTRY eglGetConfigs (EGLDisplay dpy, EGLConfig *configs,
