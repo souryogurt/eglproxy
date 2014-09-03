@@ -3,9 +3,11 @@
  * Implementation of EGL using WGL.
  */
 #include "eglproxy.h"
+#include <Windows.h>
+#include <stdlib.h>
 
 struct PlatformDisplay {
-    int padding;
+    HDC hdc;
 };
 
 void *platform_create_context (PlatformDisplay *display,
@@ -28,18 +30,35 @@ void *platform_window_surface_create (PlatformDisplay *display,
 
 void platform_window_surface_destroy (PlatformDisplay *display, void *drawable)
 {
-    
+
 }
 
 PlatformDisplay *platform_display_create (EGLNativeDisplayType id)
 {
-    return NULL;
+    HDC hdc = NULL;
+    PlatformDisplay *display = NULL;
+    if (id == EGL_DEFAULT_DISPLAY) {
+        hdc = GetDC (NULL);
+    } else {
+        /* TODO: parse attributes
+         * Should set hdc
+         */
+        return NULL;
+    }
+    display = (PlatformDisplay *) calloc (1, sizeof (PlatformDisplay));
+    if (display != NULL) {
+        display->hdc = hdc;
+    }
+    return display;
 }
 
 void platform_display_destroy (PlatformDisplay *display,
                                EGLNativeDisplayType id)
 {
-
+    if (id == EGL_DEFAULT_DISPLAY) {
+        ReleaseDC (NULL, display->hdc);
+    }
+    free (display);
 }
 
 EGLint platform_display_initialize (PlatformDisplay *display,
