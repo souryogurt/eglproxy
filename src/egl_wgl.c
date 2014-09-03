@@ -1,100 +1,61 @@
-#define EGLAPI __declspec(dllexport)
-#include <EGL/egl.h>
+/**
+ * @file egl_wgl.c
+ * Implementation of EGL using WGL.
+ */
+#include "eglproxy.h"
 
-EGLBoolean EGLAPIENTRY eglBindAPI (EGLenum api)
+struct PlatformDisplay {
+    int padding;
+};
+
+void *platform_create_context (PlatformDisplay *display,
+                               EGLProxyConfig *egl_config,
+                               ContextAttributes *attributes)
 {
-    switch (api) {
-        case EGL_OPENGL_API:
-            return EGL_FALSE;
-        default:
-            return EGL_FALSE;
-    }
-    /*TODO: Set last EGL error for this thread */
+    return NULL;
+}
+
+void platform_context_destroy (PlatformDisplay *display, void *context)
+{
+
+}
+
+void *platform_window_surface_create (PlatformDisplay *display,
+                                      EGLProxyConfig *egl_config, EGLNativeWindowType win)
+{
+    return NULL;
+}
+
+void platform_window_surface_destroy (PlatformDisplay *display, void *drawable)
+{
+    
+}
+
+PlatformDisplay *platform_display_create (EGLNativeDisplayType id)
+{
+    return NULL;
+}
+
+void platform_display_destroy (PlatformDisplay *display,
+                               EGLNativeDisplayType id)
+{
+
+}
+
+EGLint platform_display_initialize (PlatformDisplay *display,
+                                    EGLProxyConfig **config_list)
+{
+    return 0;
+}
+
+EGLBoolean platform_make_current (PlatformDisplay *display,
+                                  EGLProxySurface *draw, EGLProxySurface *read, EGLProxyContext *ctx)
+{
     return EGL_FALSE;
 }
 
-EGLBoolean EGLAPIENTRY eglChooseConfig (EGLDisplay dpy,
-                                        const EGLint *attrib_list,
-                                        EGLConfig *configs, EGLint config_size,
-                                        EGLint *num_config)
+EGLBoolean platform_swap_buffers (PlatformDisplay *display,
+                                  EGLProxySurface *surface)
 {
-    /*TODO: Set last EGL error for this thread */
     return EGL_FALSE;
-}
-
-EGLContext EGLAPIENTRY eglCreateContext (EGLDisplay dpy, EGLConfig config,
-        EGLContext share_context,
-        const EGLint *attrib_list)
-{
-    /*TODO: Set last EGL error for this thread */
-    return EGL_NO_CONTEXT;
-}
-
-EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config,
-        EGLNativeWindowType win,
-        const EGLint *attrib_list)
-{
-    /*TODO: Set last EGL error for this thread */
-    return EGL_NO_SURFACE;
-}
-
-EGLBoolean EGLAPIENTRY eglDestroyContext (EGLDisplay dpy, EGLContext ctx)
-{
-    /*TODO: Set last EGL error for this thread */
-    return EGL_FALSE;
-}
-
-EGLBoolean EGLAPIENTRY eglDestroySurface (EGLDisplay dpy, EGLSurface surface)
-{
-    /*TODO: Set last EGL error for this thread */
-    return EGL_FALSE;
-}
-
-EGLBoolean EGLAPIENTRY eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config,
-        EGLint attribute, EGLint *value)
-{
-    /*TODO: Set last EGL error for this thread */
-    return EGL_FALSE;
-}
-
-EGLDisplay EGLAPIENTRY eglGetDisplay (EGLNativeDisplayType display_id)
-{
-    /*TODO: Set last EGL error for this thread */
-    return EGL_FALSE;
-}
-
-EGLBoolean EGLAPIENTRY eglInitialize (EGLDisplay dpy, EGLint *major,
-                                      EGLint *minor)
-{
-    /*TODO: Set last EGL error for this thread */
-    return EGL_FALSE;
-}
-
-EGLBoolean EGLAPIENTRY eglMakeCurrent (EGLDisplay dpy, EGLSurface draw,
-                                       EGLSurface read, EGLContext ctx)
-{
-    /*TODO: Set last EGL error for this thread */
-    return EGL_FALSE;
-}
-
-const char *EGLAPIENTRY eglQueryString (EGLDisplay dpy, EGLint name)
-{
-    return "";
-}
-
-EGLBoolean EGLAPIENTRY eglSwapBuffers (EGLDisplay dpy, EGLSurface surface)
-{
-    /*TODO: Set last EGL error for this thread */
-    return EGL_FALSE;
-}
-
-EGLBoolean EGLAPIENTRY eglTerminate (EGLDisplay dpy)
-{
-    /*TODO: Set last EGL error for this thread */
-    return EGL_FALSE;
-}
-
-EGLint EGLAPIENTRY eglGetError (void)
-{
-    return EGL_CONTEXT_LOST;
 }

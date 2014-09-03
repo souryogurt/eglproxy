@@ -679,7 +679,7 @@ EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config,
      * EGL_BAD_NATIVE_WINDOW error should be generated. */
     for (egl_surface = egl_display->surfaces; egl_surface != NULL;
             egl_surface = egl_surface->next) {
-        if (egl_surface->window == (Window)win) {
+        if (egl_surface->window == win) {
             eglSetError (EGL_BAD_ALLOC);
             return EGL_NO_SURFACE;
         }
@@ -691,7 +691,7 @@ EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config,
         if (egl_surface->platform) {
             egl_surface->next = egl_display->surfaces;
             egl_display->surfaces = egl_surface;
-            egl_surface->window = (Window) win;
+            egl_surface->window = win;
             eglSetError (EGL_SUCCESS);
             return (EGLSurface)egl_surface;
         }
