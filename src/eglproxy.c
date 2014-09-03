@@ -496,6 +496,7 @@ EGLBoolean EGLAPIENTRY eglChooseConfig (EGLDisplay dpy,
     EGLConfigQuery query = default_query;
     EGLProxyConfigEntry *selected_configs = NULL;
     EGLint n_selected_configs = 0;
+    EGLint i = 0;
     EGLProxyDisplay *egl_display = displays;
     while ((egl_display != NULL) && (egl_display != dpy)) {
         egl_display = egl_display->next;
@@ -531,10 +532,10 @@ EGLBoolean EGLAPIENTRY eglChooseConfig (EGLDisplay dpy,
     qsort (selected_configs, (size_t) n_selected_configs,
            sizeof (EGLProxyConfigEntry),
            config_comparator);
-
-    for (*num_config = 0; ((*num_config < config_size) &&
-                           (*num_config < n_selected_configs)); *num_config += 1) {
-        configs[*num_config] = (EGLConfig) selected_configs[*num_config].config;
+    *num_config = (config_size < n_selected_configs) ? config_size :
+                  n_selected_configs;
+    for (i = 0; i < *num_config; i++) {
+        configs[i] = (EGLConfig) selected_configs[i].config;
     }
     free (selected_configs);
     eglSetError (EGL_SUCCESS);
