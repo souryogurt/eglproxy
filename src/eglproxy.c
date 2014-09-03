@@ -904,7 +904,6 @@ EGLBoolean EGLAPIENTRY eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config,
 EGLDisplay EGLAPIENTRY eglGetDisplay (EGLNativeDisplayType display_id)
 {
     EGLProxyDisplay *display = NULL;
-    struct PlatformDisplay *platform = NULL;
     display = displays;
     while (display != NULL) {
         if (display->display_id == display_id) {
@@ -913,19 +912,18 @@ EGLDisplay EGLAPIENTRY eglGetDisplay (EGLNativeDisplayType display_id)
         }
         display = display->next;
     }
-    platform = platform_display_create (display_id);
-    if (platform != NULL) {
-        display = (EGLProxyDisplay *) calloc (1, sizeof (EGLProxyDisplay));
-        if (display != NULL) {
+    display = (EGLProxyDisplay *) calloc (1, sizeof (EGLProxyDisplay));
+    if (display != NULL) {
+        display->platform = platform_display_create (display_id);
+        if (display->platform != NULL) {
             display->display_id = display_id;
-            display->platform = platform;
             display->next = displays;
             displays = display;
             eglSetError (EGL_SUCCESS);
             return (EGLDisplay) display;
         }
+        free (display);
     }
-    platform_display_destroy (platform, display_id);
     return EGL_NO_DISPLAY;
 }
 
