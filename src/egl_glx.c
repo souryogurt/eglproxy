@@ -22,7 +22,7 @@ typedef GLXContext ( *PFNGLXCREATECONTEXTATTRIBSARBPROC) (Display *dpy,
         const int *attrib_list);
 #endif /* GLX_ARB_create_context */
 
-typedef struct PlatformDisplay {
+struct PlatformDisplay {
     PFNGLXCREATECONTEXTATTRIBSARBPROC glXCreateContextAttribsARB;
     Display *x11_display; /**< Connection to X11 display */
     int screen; /**< Screen number where UGL where created */
@@ -33,7 +33,7 @@ typedef struct PlatformDisplay {
     int is_ext_visual_rating; /**< Is GLX_EXT_visual_rating there */
     int is_ext_visual_info; /**< Is GLX_EXT_visual_info there */
     int is_arb_multisample; /**< Is GLX_ARB_multisample there */
-} PlatformDisplay;
+};
 
 void *platform_create_context (PlatformDisplay *display,
                                EGLProxyConfig *egl_config,
@@ -135,8 +135,8 @@ PlatformDisplay *platform_display_create (EGLNativeDisplayType id)
     return NULL;
 }
 
-void platform_display_destroy (EGLNativeDisplayType id,
-                               PlatformDisplay *display)
+void platform_display_destroy (PlatformDisplay *display,
+                               EGLNativeDisplayType id)
 {
     if (id == EGL_DEFAULT_DISPLAY) {
         XCloseDisplay (display->x11_display);

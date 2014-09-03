@@ -925,7 +925,7 @@ EGLDisplay EGLAPIENTRY eglGetDisplay (EGLNativeDisplayType display_id)
             return (EGLDisplay) display;
         }
     }
-    platform_display_destroy (display_id, platform);
+    platform_display_destroy (platform, display_id);
     return EGL_NO_DISPLAY;
 }
 

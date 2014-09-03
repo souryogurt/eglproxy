@@ -61,14 +61,14 @@ typedef struct EGLProxySurface {
     struct EGLProxySurface *next;
 } EGLProxySurface;
 
-struct PlatformDisplay;
+typedef struct PlatformDisplay PlatformDisplay;
 
 typedef struct EGLProxyDisplay {
     struct EGLProxyDisplay *next;
     EGLProxyConfig *configs;
     EGLProxyContext *contexts;
     EGLProxySurface *surfaces;
-    struct PlatformDisplay *platform;
+    PlatformDisplay *platform;
     EGLNativeDisplayType display_id;
     EGLint n_configs;
     EGLBoolean initialized;
@@ -80,25 +80,25 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
-void *platform_create_context (struct PlatformDisplay *display,
+void *platform_create_context (PlatformDisplay *display,
                                EGLProxyConfig *egl_config,
                                ContextAttributes *attributes);
-void platform_context_destroy (struct PlatformDisplay *display, void *context);
-void *platform_window_surface_create (struct PlatformDisplay *display,
+void platform_context_destroy (PlatformDisplay *display, void *context);
+void *platform_window_surface_create (PlatformDisplay *display,
                                       EGLProxyConfig *egl_config,
                                       EGLNativeWindowType win);
-void platform_window_surface_destroy (struct PlatformDisplay *display,
+void platform_window_surface_destroy (PlatformDisplay *display,
                                       void *drawable);
-struct PlatformDisplay *platform_display_create (EGLNativeDisplayType id);
-void platform_display_destroy (EGLNativeDisplayType id,
-                               struct PlatformDisplay *display);
-EGLint platform_display_initialize (struct PlatformDisplay *display,
+PlatformDisplay *platform_display_create (EGLNativeDisplayType id);
+void platform_display_destroy (PlatformDisplay *display,
+                               EGLNativeDisplayType id);
+EGLint platform_display_initialize (PlatformDisplay *display,
                                     EGLProxyConfig **config_list);
-EGLBoolean platform_make_current (struct PlatformDisplay *display,
+EGLBoolean platform_make_current (PlatformDisplay *display,
                                   EGLProxySurface *draw,
                                   EGLProxySurface *read,
                                   EGLProxyContext *ctx);
-EGLBoolean platform_swap_buffers (struct PlatformDisplay *display,
+EGLBoolean platform_swap_buffers (PlatformDisplay *display,
                                   EGLProxySurface *surface);
 
 #ifdef __cplusplus
