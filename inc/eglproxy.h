@@ -76,20 +76,30 @@ typedef struct EGLProxyDisplay {
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
-extern "C"
-{
+extern "C" {
 /* *INDENT-ON* */
 #endif
 
-void *platform_create_context (struct PlatformDisplay *display, EGLProxyConfig *egl_config, ContextAttributes *attributes);
+void *platform_create_context (struct PlatformDisplay *display,
+                               EGLProxyConfig *egl_config,
+                               ContextAttributes *attributes);
 void platform_context_destroy (struct PlatformDisplay *display, void *context);
-void *platform_window_surface_create (struct PlatformDisplay *display, EGLProxyConfig *egl_config, EGLNativeWindowType win);
-void platform_window_surface_destroy (struct PlatformDisplay *display, void *drawable);
+void *platform_window_surface_create (struct PlatformDisplay *display,
+                                      EGLProxyConfig *egl_config,
+                                      EGLNativeWindowType win);
+void platform_window_surface_destroy (struct PlatformDisplay *display,
+                                      void *drawable);
 struct PlatformDisplay *platform_display_create (EGLNativeDisplayType id);
-void platform_display_destroy (EGLNativeDisplayType id, struct PlatformDisplay *display);
-EGLint platform_display_initialize (struct PlatformDisplay *display, EGLProxyConfig **config_list);
-EGLBoolean platform_make_current (struct PlatformDisplay *display, EGLProxySurface *draw, EGLProxySurface *read, EGLProxyContext *ctx);
-EGLBoolean platform_swap_buffers (struct PlatformDisplay *display, EGLProxySurface *surface);
+void platform_display_destroy (EGLNativeDisplayType id,
+                               struct PlatformDisplay *display);
+EGLint platform_display_initialize (struct PlatformDisplay *display,
+                                    EGLProxyConfig **config_list);
+EGLBoolean platform_make_current (struct PlatformDisplay *display,
+                                  EGLProxySurface *draw,
+                                  EGLProxySurface *read,
+                                  EGLProxyContext *ctx);
+EGLBoolean platform_swap_buffers (struct PlatformDisplay *display,
+                                  EGLProxySurface *surface);
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
