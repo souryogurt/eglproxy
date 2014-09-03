@@ -492,9 +492,8 @@ EGLint platform_display_initialize (PlatformDisplay *display,
                                       "GLX_ARB_multisample");
     if (display->is_modern) {
         return glx_populate_from_fbconfigs (display, config_list);
-    } else {
-        return glx_populate_from_visualinfos (display, config_list);
     }
+    return glx_populate_from_visualinfos (display, config_list);
 }
 
 EGLBoolean platform_make_current (PlatformDisplay *display,
