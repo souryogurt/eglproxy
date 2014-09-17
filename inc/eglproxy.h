@@ -2,6 +2,7 @@
 #define EGLPROXY_H
 
 #include <EGL/egl.h>
+#include <EGL/eglext.h>
 
 typedef struct EGLProxyConfig {
     void *platform;

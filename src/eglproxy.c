@@ -906,7 +906,31 @@ EGLBoolean EGLAPIENTRY eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config,
 EGLDisplay EGLAPIENTRY eglGetPlatformDisplay (EGLenum platform,
         void *native_display, const EGLAttrib *attrib_list)
 {
-    eglSetError (EGL_BAD_PARAMETER);
+    EGLProxyDisplay *display = displays;
+    if (platform != EGL_PLATFORM_X11_KHR) {
+        eglSetError (EGL_BAD_PARAMETER);
+        return EGL_NO_DISPLAY;
+    }
+    while (display != NULL) {
+        if (display->display_id == native_display) {
+            eglSetError (EGL_SUCCESS);
+            return (EGLDisplay) display;
+        }
+        display = display->next;
+    }
+    display = (EGLProxyDisplay *) calloc (1, sizeof (EGLProxyDisplay));
+    if (display != NULL) {
+        display->platform = platform_display_create ((EGLNativeDisplayType)
+                            native_display);
+        if (display->platform != NULL) {
+            display->display_id = (EGLNativeDisplayType)native_display;
+            display->next = displays;
+            displays = display;
+            eglSetError (EGL_SUCCESS);
+            return (EGLDisplay) display;
+        }
+        free (display);
+    }
     return EGL_NO_DISPLAY;
 }
 
