@@ -94,6 +94,8 @@ static EGLProxyDisplay *displays = NULL;
 
 static EGLenum CurrentAPI = EGL_NONE; /*TODO: Should be in TLS */
 
+static EGLint last_error = EGL_SUCCESS; /*TODO: Should be in TLS */
+
 #define CHECK_EGLCONFIG(dpy, config) { \
 if (((EGLProxyConfig*)(config) < ((EGLProxyDisplay*)(dpy))->configs) || \
     ((EGLProxyConfig*)(config) >= &((EGLProxyDisplay*)(dpy))->configs[((EGLProxyDisplay*)(dpy))->n_configs])){ \
@@ -106,7 +108,7 @@ if (((EGLProxyConfig*)(config) < ((EGLProxyDisplay*)(dpy))->configs) || \
 
 static void eglSetError (EGLint error)
 {
-    UNUSED (error);
+    last_error = error;
 }
 
 EGLBoolean EGLAPIENTRY eglBindAPI (EGLenum api)
@@ -901,6 +903,13 @@ EGLBoolean EGLAPIENTRY eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config,
     return EGL_TRUE;
 }
 
+EGLDisplay EGLAPIENTRY eglGetPlatformDisplay (EGLenum platform,
+        void *native_display, const EGLAttrib *attrib_list)
+{
+    eglSetError (EGL_BAD_PARAMETER);
+    return EGL_NO_DISPLAY;
+}
+
 EGLDisplay EGLAPIENTRY eglGetDisplay (EGLNativeDisplayType display_id)
 {
     EGLProxyDisplay *display = NULL;
@@ -1068,7 +1077,7 @@ EGLBoolean EGLAPIENTRY eglTerminate (EGLDisplay dpy)
 
 EGLint EGLAPIENTRY eglGetError (void)
 {
-    return EGL_SUCCESS;
+    return last_error;
 }
 
 EGLBoolean EGLAPIENTRY eglGetConfigs (EGLDisplay dpy, EGLConfig *configs,
