@@ -35,6 +35,11 @@ struct PlatformDisplay {
     int is_arb_multisample; /**< Is GLX_ARB_multisample there */
 };
 
+struct PlatformDisplayAttributes {
+    EGLNativeDisplayType native_display;
+    int screen;
+};
+
 void *platform_create_context (PlatformDisplay *display,
                                EGLProxyConfig *egl_config,
                                ContextAttributes *attributes)
@@ -99,6 +104,39 @@ void platform_window_surface_destroy (PlatformDisplay *display, void *drawable)
     if (display->is_modern) {
         glXDestroyWindow (display->x11_display, (GLXDrawable) drawable);
     }
+}
+
+PlatformDisplayAttributes *platform_display_attributes_create (EGLenum platform,
+        void *native_display, const EGLAttrib *attrib_list)
+{
+    int screen = 0;
+    PlatformDisplayAttributes *attributes = NULL;
+    if (platform != EGL_PLATFORM_X11_KHR) {
+        eglSetError (EGL_BAD_PARAMETER);
+        return NULL;
+    }
+    if (attrib_list != NULL) {
+        size_t i = 0;
+        for (i = 0; attrib_list[i] != EGL_NONE; i += 2) {
+            EGLint value = attrib_list[i + 1];
+            switch (attrib_list[i]) {
+                case EGL_PLATFORM_X11_SCREEN_KHR:
+                    screen = (int) value;
+                    break;
+                default:
+                    eglSetError (EGL_BAD_ATTRIBUTE);
+                    return NULL;
+            }
+        }
+    }
+    attributes = (PlatformDisplayAttributes *)calloc (1,
+                 sizeof (PlatformDisplayAttributes));
+    if (attributes != NULL) {
+        attributes->native_display = native_display;
+        attributes->screen = screen;
+        return attributes;
+    }
+    return NULL;
 }
 
 PlatformDisplay *platform_display_create (EGLNativeDisplayType id)

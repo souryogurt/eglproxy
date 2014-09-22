@@ -106,7 +106,7 @@ if (((EGLProxyConfig*)(config) < ((EGLProxyDisplay*)(dpy))->configs) || \
 
 #define UNUSED(x) (void)(x)
 
-static void eglSetError (EGLint error)
+void eglSetError (EGLint error)
 {
     last_error = error;
 }
@@ -907,10 +907,13 @@ EGLDisplay EGLAPIENTRY eglGetPlatformDisplay (EGLenum platform,
         void *native_display, const EGLAttrib *attrib_list)
 {
     EGLProxyDisplay *display = displays;
-    if (platform != EGL_PLATFORM_X11_KHR) {
-        eglSetError (EGL_BAD_PARAMETER);
+    PlatformDisplayAttributes *display_attributes =
+        platform_display_attributes_create (platform, native_display, attrib_list);
+    if (display_attributes == NULL) {
         return EGL_NO_DISPLAY;
     }
+    free (display_attributes);
+
     while (display != NULL) {
         if (display->display_id == native_display) {
             eglSetError (EGL_SUCCESS);

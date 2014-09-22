@@ -63,6 +63,7 @@ typedef struct EGLProxySurface {
 } EGLProxySurface;
 
 typedef struct PlatformDisplay PlatformDisplay;
+typedef struct PlatformDisplayAttributes PlatformDisplayAttributes;
 
 typedef struct EGLProxyDisplay {
     struct EGLProxyDisplay *next;
@@ -81,6 +82,7 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
+void eglSetError (EGLint error);
 void *platform_create_context (PlatformDisplay *display,
                                EGLProxyConfig *egl_config,
                                ContextAttributes *attributes);
@@ -101,6 +103,9 @@ EGLBoolean platform_make_current (PlatformDisplay *display,
                                   EGLProxyContext *ctx);
 EGLBoolean platform_swap_buffers (PlatformDisplay *display,
                                   EGLProxySurface *surface);
+
+PlatformDisplayAttributes *platform_display_attributes_create (EGLenum platform,
+        void *native_display, const EGLAttrib *attrib_list);
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
