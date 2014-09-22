@@ -118,7 +118,7 @@ PlatformDisplayAttributes *platform_display_attributes_create (EGLenum platform,
     if (attrib_list != NULL) {
         size_t i = 0;
         for (i = 0; attrib_list[i] != EGL_NONE; i += 2) {
-            EGLint value = attrib_list[i + 1];
+            EGLAttrib value = attrib_list[i + 1];
             switch (attrib_list[i]) {
                 case EGL_PLATFORM_X11_SCREEN_KHR:
                     screen = (int) value;
@@ -132,7 +132,7 @@ PlatformDisplayAttributes *platform_display_attributes_create (EGLenum platform,
     attributes = (PlatformDisplayAttributes *)calloc (1,
                  sizeof (PlatformDisplayAttributes));
     if (attributes != NULL) {
-        attributes->native_display = native_display;
+        attributes->native_display = (EGLNativeDisplayType) native_display;
         attributes->screen = screen;
         return attributes;
     }
