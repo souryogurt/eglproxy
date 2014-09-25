@@ -912,19 +912,19 @@ EGLDisplay EGLAPIENTRY eglGetPlatformDisplay (EGLenum platform,
     if (display_attributes == NULL) {
         return EGL_NO_DISPLAY;
     }
-    free (display_attributes);
 
     while (display != NULL) {
-        if (display->display_id == native_display) {
+        if (platform_display_has_attributes (display, display_attributes)) {
             eglSetError (EGL_SUCCESS);
+            free (display_attributes);
             return (EGLDisplay) display;
         }
         display = display->next;
     }
     display = (EGLProxyDisplay *) calloc (1, sizeof (EGLProxyDisplay));
     if (display != NULL) {
-        display->platform = platform_display_create ((EGLNativeDisplayType)
-                            native_display);
+        display->platform = platform_display_create (display_attributes);
+        free (display_attributes);
         if (display->platform != NULL) {
             display->display_id = (EGLNativeDisplayType)native_display;
             display->next = displays;
@@ -934,23 +934,28 @@ EGLDisplay EGLAPIENTRY eglGetPlatformDisplay (EGLenum platform,
         }
         free (display);
     }
+    free (display_attributes);
     return EGL_NO_DISPLAY;
 }
 
 EGLDisplay EGLAPIENTRY eglGetDisplay (EGLNativeDisplayType display_id)
 {
-    EGLProxyDisplay *display = NULL;
-    display = displays;
+    EGLProxyDisplay *display = displays;
+    const EGLenum platform = EGL_PLATFORM_X11_KHR;
+    PlatformDisplayAttributes *display_attributes =
+        platform_display_attributes_create (platform, display_id, NULL);
     while (display != NULL) {
-        if (display->display_id == display_id) {
+        if (platform_display_has_attributes (display, display_attributes)) {
             eglSetError (EGL_SUCCESS);
+            free (display_attributes);
             return (EGLDisplay) display;
         }
         display = display->next;
     }
     display = (EGLProxyDisplay *) calloc (1, sizeof (EGLProxyDisplay));
     if (display != NULL) {
-        display->platform = platform_display_create (display_id);
+        display->platform = platform_display_create (display_attributes);
+        free (display_attributes);
         if (display->platform != NULL) {
             display->display_id = display_id;
             display->next = displays;
@@ -960,6 +965,7 @@ EGLDisplay EGLAPIENTRY eglGetDisplay (EGLNativeDisplayType display_id)
         }
         free (display);
     }
+    free (display_attributes);
     return EGL_NO_DISPLAY;
 }
 

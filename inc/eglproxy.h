@@ -92,7 +92,8 @@ void *platform_window_surface_create (PlatformDisplay *display,
                                       EGLNativeWindowType win);
 void platform_window_surface_destroy (PlatformDisplay *display,
                                       void *drawable);
-PlatformDisplay *platform_display_create (EGLNativeDisplayType id);
+PlatformDisplay *platform_display_create (const PlatformDisplayAttributes
+        *attributes);
 void platform_display_destroy (PlatformDisplay *display,
                                EGLNativeDisplayType id);
 EGLint platform_display_initialize (PlatformDisplay *display,
@@ -107,6 +108,8 @@ EGLBoolean platform_swap_buffers (PlatformDisplay *display,
 PlatformDisplayAttributes *platform_display_attributes_create (EGLenum platform,
         void *native_display, const EGLAttrib *attrib_list);
 
+int platform_display_has_attributes (const EGLProxyDisplay *display,
+                                     const PlatformDisplayAttributes *attributes);
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }

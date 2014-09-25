@@ -139,23 +139,24 @@ PlatformDisplayAttributes *platform_display_attributes_create (EGLenum platform,
     return NULL;
 }
 
-PlatformDisplay *platform_display_create (EGLNativeDisplayType id)
+int platform_display_has_attributes (const EGLProxyDisplay *display,
+                                     const PlatformDisplayAttributes *attributes)
 {
-    Display *x11_display = NULL;
-    int screen = 0;
+    return (display->display_id == attributes->native_display) &&
+           (display->platform->screen == attributes->screen);
+}
+
+PlatformDisplay *platform_display_create (const PlatformDisplayAttributes
+        *attributes)
+{
+    Display *x11_display = attributes->native_display;
     int glx_major = 0;
     int glx_minor = 0;
-    if (id == EGL_DEFAULT_DISPLAY) {
+    if (x11_display == EGL_DEFAULT_DISPLAY) {
         x11_display = XOpenDisplay ((char *)NULL);
         if (x11_display == NULL) {
             return NULL;
         }
-        screen = DefaultScreen (x11_display);
-    } else {
-        /* TODO: parse attributes
-         * Should set x11_display and screen
-         */
-        return NULL;
     }
     if (glXQueryVersion (x11_display, &glx_major, &glx_minor) == True) {
         if ((glx_major > 1) || ((glx_major == 1) && (glx_minor >= 2))) {
@@ -163,7 +164,7 @@ PlatformDisplay *platform_display_create (EGLNativeDisplayType id)
                                        sizeof (PlatformDisplay));
             if (display != NULL) {
                 display->x11_display = x11_display;
-                display->screen = screen;
+                display->screen = attributes->screen;
                 display->glx_major = glx_major;
                 display->glx_minor = glx_minor;
                 return display;
