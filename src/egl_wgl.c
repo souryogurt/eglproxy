@@ -188,6 +188,7 @@ static EGLint wgl_populate_default (PlatformDisplay *display,
 {
     int max_pixel_format = 0;
     int pixel_format = 1;
+    EGLint n_configs = 0;
     EGLProxyConfig *list = NULL;
     EGLProxyConfig *egl_config = NULL;
 
@@ -204,10 +205,55 @@ static EGLint wgl_populate_default (PlatformDisplay *display,
         DescribePixelFormat (display->hdc, pixel_format,
                              sizeof (PIXELFORMATDESCRIPTOR), &pfd);
         egl_config = list;
-        egl_config->config_id = pixel_format;
+        if (pfd.iPixelType != PFD_TYPE_RGBA) {
+            continue;
+        }
+        if (! (pfd.dwFlags & PFD_SUPPORT_OPENGL)) {
+            continue;
+        }
+        egl_config->config_id = n_configs + 1;
+        egl_config->buffer_size = pfd.cColorBits;
+        egl_config->red_size = pfd.cRedBits;
+        egl_config->green_size = pfd.cGreenBits;
+        egl_config->blue_size = pfd.cBlueBits;
+        egl_config->luminance_size = 0;
+        egl_config->alpha_size = pfd.cAlphaBits;
+        egl_config->alpha_mask_size = 0;
+        egl_config->bind_to_texture_rgb = 0;
+        egl_config->bind_to_texture_rgba = 0;
+        egl_config->double_buffer = (pfd.dwFlags & PFD_DOUBLEBUFFER) ? EGL_TRUE :
+                                    EGL_FALSE;
+        egl_config->color_buffer_type = EGL_RGB_BUFFER;
+        /*TODO: CHECK THIS FLAGS!!!!! */
+        egl_config->config_caveat = (pfd.dwFlags & PFD_GENERIC_ACCELERATED) ? EGL_NONE :
+                                    EGL_SLOW_CONFIG;
+        egl_config->conformant = EGL_OPENGL_BIT;
+        egl_config->renderable_type = EGL_OPENGL_BIT;
+        egl_config->depth_size = pfd.cDepthBits;
+        egl_config->level = 0;
+        egl_config->max_pbuffer_width = 0;
+        egl_config->max_pbuffer_height = 0;
+        egl_config->max_pbuffer_pixels = 0;
+        egl_config->max_swap_interval = 1;
+        egl_config->min_swap_interval = 1;
+        egl_config->native_renderable = (pfd.dwFlags & PFD_SUPPORT_GDI) ? EGL_TRUE :
+                                        EGL_FALSE;
+        egl_config->native_visual_id = (EGLint) pixel_format;
+        egl_config->native_visual_type = 0;
+        /* TODO: implement using ARB_Multisample */
+        egl_config->sample_buffers = 0;
+        egl_config->samples = 0;
+        egl_config->stencil_size = pfd.cStencilBits;
+        egl_config->surface_type = 0;
+        egl_config->surface_type |= (pfd.dwFlags & PFD_DRAW_TO_WINDOW) ? EGL_WINDOW_BIT
+                                    : 0;
+        egl_config->surface_type |= (pfd.dwFlags & PFD_DRAW_TO_BITMAP) ? EGL_PIXMAP_BIT
+                                    : 0;
+        egl_config->transparent_type = EGL_NONE;
+        n_configs++;
         list++;
     }
-    return max_pixel_format;
+    return n_configs;
 }
 
 EGLint platform_display_initialize (PlatformDisplay *display,
