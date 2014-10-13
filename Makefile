@@ -27,7 +27,7 @@ tags:
 	ctags -R
 
 astyle:
-	astyle --options=./astylerc $(SOURCES) inc/eglproxy.h
+	astyle --options=./astylerc $(SOURCES) inc/eglproxy.h src/egl_wgl.c
 
 cppcheck:
 	cppcheck -q --template=gcc --std=c89 --enable=all $(CPPFLAGS) -D__unix__ -I/usr/include $(SOURCES)

@@ -3,7 +3,7 @@
  * Implementation of EGL using WGL.
  */
 #include "eglproxy.h"
-#include <Windows.h>
+#include <windows.h>
 #include <stdlib.h>
 
 #ifndef WGL_ARB_extensions_string
@@ -259,7 +259,7 @@ static EGLint wgl_populate_default (PlatformDisplay *display,
 EGLint platform_display_initialize (PlatformDisplay *display,
                                     EGLProxyConfig **config_list)
 {
-    //Create Fake window class
+    /*Create Fake window class */
     WNDCLASSEX wc;
     HWND fake_window = NULL;
     HDC hDC = NULL;
@@ -293,11 +293,11 @@ EGLint platform_display_initialize (PlatformDisplay *display,
     wc.lpfnWndProc = DefWindowProc;
     wc.lpszClassName = "MyFakeOpenGLWindowClass";
     wc.style = CS_OWNDC;
-    if ( RegisterClassEx (&wc) == NULL ) {
+    if ( RegisterClassEx (&wc) == 0 ) {
         return 0;
     }
 
-    //Creating fake context
+    /* Creating fake context */
     fake_window = CreateWindowEx (0, wc.lpszClassName, "OpenGL Window",
                                   WS_OVERLAPPEDWINDOW | WS_MAXIMIZE | WS_CLIPCHILDREN,
                                   CW_USEDEFAULT, CW_USEDEFAULT, 640, 480, 0, 0, hInstance, 0);
