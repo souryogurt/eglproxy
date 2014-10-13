@@ -933,8 +933,9 @@ EGLDisplay EGLAPIENTRY eglGetPlatformDisplay (EGLenum platform,
             return (EGLDisplay) display;
         }
         free (display);
+    } else {
+        free (display_attributes);
     }
-    free (display_attributes);
     return EGL_NO_DISPLAY;
 }
 
@@ -964,8 +965,9 @@ EGLDisplay EGLAPIENTRY eglGetDisplay (EGLNativeDisplayType display_id)
             return (EGLDisplay) display;
         }
         free (display);
+    } else {
+        free (display_attributes);
     }
-    free (display_attributes);
     return EGL_NO_DISPLAY;
 }
 
