@@ -1,4 +1,9 @@
+#pragma warning( push )
+#pragma warning( disable: 4668 )
+#pragma warning( disable: 4820 )
+#pragma warning( disable: 4255 )
 #include "eglproxy.h"
+#pragma warning( pop )
 #include <stdlib.h>
 
 typedef struct EGLProxyConfigEntry {

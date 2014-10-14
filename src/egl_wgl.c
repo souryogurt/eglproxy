@@ -2,8 +2,15 @@
  * @file egl_wgl.c
  * Implementation of EGL using WGL.
  */
+
+#pragma warning( push )
+#pragma warning( disable: 4668 )
+#pragma warning( disable: 4820 )
+#pragma warning( disable: 4255 )
 #include "eglproxy.h"
 #include <windows.h>
+#pragma warning( pop )
+
 #include <stdlib.h>
 
 #ifndef WGL_ARB_extensions_string
