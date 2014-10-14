@@ -9,11 +9,11 @@
 #pragma warning( disable: 4668 )
 #pragma warning( disable: 4820 )
 #pragma warning( disable: 4255 )
-#endif //_MSC_VER
+#endif /* _MSC_VER */
 #include <windows.h>
 #ifdef _MSC_VER
 #pragma warning( pop )
-#endif //_MSC_VER
+#endif /* _MSC_VER */
 
 #include <stdlib.h>
 

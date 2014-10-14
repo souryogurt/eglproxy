@@ -6,12 +6,12 @@
 #pragma warning( disable: 4668 )
 #pragma warning( disable: 4820 )
 #pragma warning( disable: 4255 )
-#endif //_MSC_VER
+#endif /* _MSC_VER */
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #ifdef _MSC_VER
 #pragma warning( pop )
-#endif //_MSC_VER
+#endif /* _MSC_VER */
 
 typedef struct EGLProxyConfig {
     void *platform;
