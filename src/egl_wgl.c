@@ -2,14 +2,18 @@
  * @file egl_wgl.c
  * Implementation of EGL using WGL.
  */
+#include "eglproxy.h"
 
+#ifdef _MSC_VER
 #pragma warning( push )
 #pragma warning( disable: 4668 )
 #pragma warning( disable: 4820 )
 #pragma warning( disable: 4255 )
-#include "eglproxy.h"
+#endif //_MSC_VER
 #include <windows.h>
+#ifdef _MSC_VER
 #pragma warning( pop )
+#endif //_MSC_VER
 
 #include <stdlib.h>
 
