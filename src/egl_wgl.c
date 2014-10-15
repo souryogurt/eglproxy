@@ -11,6 +11,7 @@
 #pragma warning( disable: 4255 )
 #endif /* _MSC_VER */
 #include <windows.h>
+#include <tchar.h>
 #ifdef _MSC_VER
 #pragma warning( pop )
 #endif /* _MSC_VER */
@@ -302,14 +303,14 @@ EGLint platform_display_initialize (PlatformDisplay *display,
     wc.hCursor = LoadCursor (NULL, IDC_ARROW);
     wc.hInstance = hInstance;
     wc.lpfnWndProc = DefWindowProc;
-    wc.lpszClassName = "MyFakeOpenGLWindowClass";
+    wc.lpszClassName = _T ("MyFakeOpenGLWindowClass");
     wc.style = CS_OWNDC;
     if ( RegisterClassEx (&wc) == 0 ) {
         return 0;
     }
 
     /* Creating fake context */
-    fake_window = CreateWindowEx (0, wc.lpszClassName, "OpenGL Window",
+    fake_window = CreateWindowEx (0, wc.lpszClassName, _T ("OpenGL Window"),
                                   WS_OVERLAPPEDWINDOW | WS_MAXIMIZE | WS_CLIPCHILDREN,
                                   CW_USEDEFAULT, CW_USEDEFAULT, 640, 480, 0, 0, hInstance, 0);
 
@@ -321,14 +322,14 @@ EGLint platform_display_initialize (PlatformDisplay *display,
     if (iPixelFormat == 0) {
         ReleaseDC (fake_window, hDC);
         DestroyWindow (fake_window);
-        UnregisterClass ("MyFakeOpenGLWindowClass", hInstance);
+        UnregisterClass (_T ("MyFakeOpenGLWindowClass"), hInstance);
         return 0;
     }
 
     if (!SetPixelFormat (hDC, iPixelFormat, &pfd)) {
         ReleaseDC (fake_window, hDC);
         DestroyWindow (fake_window);
-        UnregisterClass ("MyFakeOpenGLWindowClass", hInstance);
+        UnregisterClass (_T ("MyFakeOpenGLWindowClass"), hInstance);
         return 0;
     }
 
@@ -336,7 +337,7 @@ EGLint platform_display_initialize (PlatformDisplay *display,
     if (hRCFake == NULL) {
         ReleaseDC (fake_window, hDC);
         DestroyWindow (fake_window);
-        UnregisterClass ("MyFakeOpenGLWindowClass", hInstance);
+        UnregisterClass (_T ("MyFakeOpenGLWindowClass"), hInstance);
         return 0;
     }
     wglMakeCurrent (hDC, hRCFake);
@@ -348,7 +349,7 @@ EGLint platform_display_initialize (PlatformDisplay *display,
         wglDeleteContext (hRCFake);
         ReleaseDC (fake_window, hDC);
         DestroyWindow (fake_window);
-        UnregisterClass ("MyFakeOpenGLWindowClass", hInstance);
+        UnregisterClass (_T ("MyFakeOpenGLWindowClass"), hInstance);
         return 0;
     }
 
@@ -373,7 +374,7 @@ EGLint platform_display_initialize (PlatformDisplay *display,
     wglDeleteContext (hRCFake);
     ReleaseDC (fake_window, hDC);
     DestroyWindow (fake_window);
-    UnregisterClass ("MyFakeOpenGLWindowClass", hInstance);
+    UnregisterClass (_T ("MyFakeOpenGLWindowClass"), hInstance);
     if (is_arb_pixel_format) {
         return wgl_populate_from_arb_pixel_format (display, config_list);
     }
