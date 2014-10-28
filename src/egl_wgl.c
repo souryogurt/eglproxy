@@ -121,6 +121,8 @@ typedef struct WGLOpenGLContext {
 
 static const LPCWSTR FakeClass = _T ("MyFakeOpenGLWindowClass");
 
+#define UNUSED(x) (void)(x)
+
 void *platform_create_context (PlatformDisplay *display,
                                EGLProxyConfig *egl_config,
                                ContextAttributes *attributes)
@@ -197,6 +199,7 @@ void *platform_create_context (PlatformDisplay *display,
 void platform_context_destroy (PlatformDisplay *display, void *context)
 {
     WGLOpenGLContext *wgl_context = (WGLOpenGLContext *)context;
+    UNUSED (display);
     if (wgl_context->glrc != NULL) {
         wglDeleteContext (wgl_context->glrc);
     }
@@ -208,9 +211,8 @@ void *platform_window_surface_create (PlatformDisplay *display,
                                       EGLProxyConfig *egl_config,
                                       EGLNativeWindowType win)
 {
-    HDC hDC = NULL;
-    PIXELFORMATDESCRIPTOR pfd = {0};
-    hDC = GetDC (win);
+    HDC hDC = GetDC (win);
+    UNUSED (display);
     if (GetPixelFormat (hDC) != egl_config->native_visual_id) {
         ReleaseDC (win, hDC);
         return NULL;
@@ -221,6 +223,7 @@ void *platform_window_surface_create (PlatformDisplay *display,
 void platform_window_surface_destroy (PlatformDisplay *display,
                                       void *drawable)
 {
+    UNUSED (display);
     ReleaseDC (WindowFromDC ((HDC)drawable), (HDC) drawable);
 }
 
@@ -471,8 +474,6 @@ EGLBoolean platform_make_current (PlatformDisplay *display,
                                   EGLProxySurface *read,
                                   EGLProxyContext *ctx)
 {
-
-
     if (ctx != NULL) {
         WGLOpenGLContext *wgl_context = (WGLOpenGLContext *) ctx->platform;
         if (wgl_context->glrc == NULL) {
@@ -499,6 +500,7 @@ EGLBoolean platform_make_current (PlatformDisplay *display,
 EGLBoolean platform_swap_buffers (PlatformDisplay *display,
                                   EGLProxySurface *surface)
 {
+    UNUSED (display);
     return SwapBuffers ((HDC)surface->platform) ? EGL_TRUE : EGL_FALSE;
 }
 
@@ -506,6 +508,8 @@ PlatformDisplayAttributes *platform_display_attributes_create (EGLenum platform,
         void *native_display, const EGLAttrib *attrib_list)
 {
     PlatformDisplayAttributes *attributes = NULL;
+    UNUSED (attrib_list);
+    UNUSED (platform);
     attributes = (PlatformDisplayAttributes *)calloc (1,
                  sizeof (PlatformDisplayAttributes));
     if (attributes != NULL) {
