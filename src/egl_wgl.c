@@ -167,7 +167,7 @@ void *platform_create_context (PlatformDisplay *display,
             0
         };
         context_attribs[1] = attributes->major_version;
-        context_attribs[3] = attributes->major_version;
+        context_attribs[3] = attributes->minor_version;
         hRCFake = display->wglCreateContextAttribsARB (hDC, NULL, context_attribs);
     } else {
         hRCFake = wglCreateContext (hDC);
