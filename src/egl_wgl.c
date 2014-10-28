@@ -96,9 +96,6 @@ typedef HGLRC (WINAPI *PFNWGLCREATECONTEXTATTRIBSARBPROC) (HDC hDC,
 typedef BOOL (WINAPI *PFNWGLGETPIXELFORMATATTRIBIVARBPROC) (HDC hdc,
         int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes,
         int *piValues);
-typedef BOOL (WINAPI *PFNWGLGETPIXELFORMATATTRIBFVARBPROC) (HDC hdc,
-        int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes,
-        FLOAT *pfValues);
 #endif /* WGL_ARB_pixel_format */
 
 struct PlatformDisplay {
@@ -106,7 +103,6 @@ struct PlatformDisplay {
     PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB;
     PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB;
     PFNWGLGETPIXELFORMATATTRIBIVARBPROC wglGetPixelFormatAttribivARB;
-    PFNWGLGETPIXELFORMATATTRIBFVARBPROC wglGetPixelFormatAttribfvARB;
     int is_arb_context_profile; /**< Is WGL_ARB_create_context_profile there*/
 };
 
@@ -338,8 +334,10 @@ static EGLint wgl_populate_from_arb_pixel_format (PlatformDisplay *display,
         egl_config->luminance_size = 0;
         egl_config->alpha_size = values[6];
         egl_config->alpha_mask_size = 0;
+        /* TODO: implement using WGL_ARB_render_texture */
         egl_config->bind_to_texture_rgb = EGL_FALSE;
         egl_config->bind_to_texture_rgba = EGL_FALSE;
+
         egl_config->double_buffer = values[7] ? EGL_TRUE : EGL_FALSE;
         egl_config->color_buffer_type = EGL_RGB_BUFFER;
         switch (values[8]) {
@@ -360,9 +358,12 @@ static EGLint wgl_populate_from_arb_pixel_format (PlatformDisplay *display,
         egl_config->renderable_type = EGL_OPENGL_BIT;
         egl_config->depth_size = values[9];
         egl_config->level = 0;
+
+        /* TODO: implement using WGL_ARB_pbuffer */
         egl_config->max_pbuffer_width = 0;
         egl_config->max_pbuffer_height = 0;
         egl_config->max_pbuffer_pixels = 0;
+
         egl_config->max_swap_interval = 1;
         egl_config->min_swap_interval = 1;
         egl_config->native_renderable = values[10] ? EGL_TRUE : EGL_FALSE;
@@ -562,10 +563,7 @@ EGLint platform_display_initialize (PlatformDisplay *display,
     if (is_extension_supported (extensions, "WGL_ARB_pixel_format")) {
         display->wglGetPixelFormatAttribivARB = (PFNWGLGETPIXELFORMATATTRIBIVARBPROC)
                                                 wglGetProcAddress ("wglGetPixelFormatAttribivARB");
-        display->wglGetPixelFormatAttribfvARB = (PFNWGLGETPIXELFORMATATTRIBFVARBPROC)
-                                                wglGetProcAddress ("wglGetPixelFormatAttribfvARB");
-        is_arb_pixel_format = (display->wglGetPixelFormatAttribivARB != NULL) &&
-                              (display->wglGetPixelFormatAttribfvARB != NULL);
+        is_arb_pixel_format = (display->wglGetPixelFormatAttribivARB != NULL);
     }
     wglMakeCurrent (NULL, NULL);
     wglDeleteContext (hRCFake);
@@ -583,6 +581,7 @@ EGLBoolean platform_make_current (PlatformDisplay *display,
                                   EGLProxySurface *read,
                                   EGLProxyContext *ctx)
 {
+    /* TODO: use WGL_ARB_make_current_read if available */
     if (ctx != NULL) {
         WGLOpenGLContext *wgl_context = (WGLOpenGLContext *) ctx->platform;
         if (wgl_context->glrc == NULL) {
