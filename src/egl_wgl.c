@@ -280,7 +280,112 @@ static int is_extension_supported (const char *ext_string, const char *ext)
 static EGLint wgl_populate_from_arb_pixel_format (PlatformDisplay *display,
         EGLProxyConfig **config_list)
 {
-    return 0;
+    int max_pixel_format = 0;
+    int pixel_format = 1;
+    EGLint n_configs = 0;
+    EGLProxyConfig *list = NULL;
+    EGLProxyConfig *egl_config = NULL;
+    int attribute = WGL_NUMBER_PIXEL_FORMATS_ARB;
+    const int attributes[] = {
+        WGL_SUPPORT_OPENGL_ARB, /* 0 */
+        WGL_PIXEL_TYPE_ARB, /* 1 */
+        WGL_COLOR_BITS_ARB, /* 2 */
+        WGL_RED_BITS_ARB, /* 3 */
+        WGL_GREEN_BITS_ARB, /* 4 */
+        WGL_BLUE_BITS_ARB, /* 5 */
+        WGL_ALPHA_BITS_ARB, /* 6 */
+        WGL_DOUBLE_BUFFER_ARB, /* 7 */
+        WGL_ACCELERATION_ARB, /* 8 */
+        WGL_DEPTH_BITS_ARB, /* 9 */
+        WGL_SUPPORT_GDI_ARB, /* 10 */
+        WGL_STENCIL_BITS_ARB, /* 11 */
+        WGL_DRAW_TO_WINDOW_ARB, /* 12 */
+        WGL_DRAW_TO_BITMAP_ARB, /* 13 */
+        WGL_TRANSPARENT_ARB, /* 14 */
+        WGL_TRANSPARENT_RED_VALUE_ARB, /* 15 */
+        WGL_TRANSPARENT_GREEN_VALUE_ARB, /* 16 */
+        WGL_TRANSPARENT_BLUE_VALUE_ARB /* 17 */
+    };
+    int values[sizeof (attributes)] = {0};
+
+    if (!display->wglGetPixelFormatAttribivARB (display->hdc, 0, 0, 1,
+            &attribute, &max_pixel_format)) {
+        return 0;
+    }
+
+    list = (EGLProxyConfig *) calloc ((size_t)max_pixel_format,
+                                      sizeof (EGLProxyConfig));
+    if (list == NULL) {
+        return 0;
+    }
+    *config_list = list;
+    for (pixel_format = 1; pixel_format <= max_pixel_format; pixel_format++) {
+        egl_config = list;
+        display->wglGetPixelFormatAttribivARB (display->hdc, pixel_format, 0,
+                                               sizeof (attributes), attributes,
+                                               values);
+        if (values[0] == 0) {
+            continue;
+        }
+        if (values[1] != WGL_TYPE_RGBA_ARB) {
+            continue;
+        }
+        egl_config->config_id = n_configs + 1;
+        egl_config->buffer_size = values[2];
+        egl_config->red_size = values[3];
+        egl_config->green_size = values[4];
+        egl_config->blue_size = values[5];
+        egl_config->luminance_size = 0;
+        egl_config->alpha_size = values[6];
+        egl_config->alpha_mask_size = 0;
+        egl_config->bind_to_texture_rgb = EGL_FALSE;
+        egl_config->bind_to_texture_rgba = EGL_FALSE;
+        egl_config->double_buffer = values[7] ? EGL_TRUE : EGL_FALSE;
+        egl_config->color_buffer_type = EGL_RGB_BUFFER;
+        switch (values[8]) {
+            case WGL_NO_ACCELERATION_ARB:
+                egl_config->config_caveat = EGL_SLOW_CONFIG;
+                break;
+            case WGL_FULL_ACCELERATION_ARB:
+                egl_config->config_caveat = EGL_NONE;
+                break;
+            case WGL_GENERIC_ACCELERATION_ARB: /* MCD driver */
+                egl_config->config_caveat = EGL_NON_CONFORMANT_CONFIG;
+                break;
+            default:
+                egl_config->config_caveat = EGL_NON_CONFORMANT_CONFIG;
+                break;
+        }
+        egl_config->conformant = EGL_OPENGL_BIT;
+        egl_config->renderable_type = EGL_OPENGL_BIT;
+        egl_config->depth_size = values[9];
+        egl_config->level = 0;
+        egl_config->max_pbuffer_width = 0;
+        egl_config->max_pbuffer_height = 0;
+        egl_config->max_pbuffer_pixels = 0;
+        egl_config->max_swap_interval = 1;
+        egl_config->min_swap_interval = 1;
+        egl_config->native_renderable = values[10] ? EGL_TRUE : EGL_FALSE;
+        egl_config->native_visual_id = (EGLint) pixel_format;
+        egl_config->native_visual_type = 0;
+        /* TODO: implement using ARB_Multisample */
+        egl_config->sample_buffers = 0;
+        egl_config->samples = 0;
+        egl_config->stencil_size = values[11];
+        egl_config->surface_type = 0;
+        egl_config->surface_type |= values[12] ? EGL_WINDOW_BIT : 0;
+        egl_config->surface_type |= values[13] ? EGL_PIXMAP_BIT : 0;
+        egl_config->transparent_type = EGL_NONE;
+        if (values[14]) {
+            egl_config->transparent_type = EGL_TRANSPARENT_RGB;
+            egl_config->transparent_red_value = values[15];
+            egl_config->transparent_green_value = values[16];
+            egl_config->transparent_blue_value = values[17];
+        }
+        n_configs++;
+        list++;
+    }
+    return n_configs;
 }
 
 static EGLint wgl_populate_default (PlatformDisplay *display,
@@ -462,7 +567,6 @@ EGLint platform_display_initialize (PlatformDisplay *display,
         is_arb_pixel_format = (display->wglGetPixelFormatAttribivARB != NULL) &&
                               (display->wglGetPixelFormatAttribfvARB != NULL);
     }
-    is_arb_pixel_format = 0;
     wglMakeCurrent (NULL, NULL);
     wglDeleteContext (hRCFake);
     ReleaseDC (fake_window, hDC);
