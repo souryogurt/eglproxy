@@ -471,35 +471,24 @@ EGLint platform_display_initialize (PlatformDisplay *display,
                                     EGLProxyConfig **config_list)
 {
     /*Create Fake window class */
-    WNDCLASSEX wc;
+    EGLint result = 0;
+    WNDCLASSEX wc = {0};
     HWND fake_window = NULL;
     HDC hDC = NULL;
     int iPixelFormat = 0;
+    BOOL success = FALSE;
     HGLRC hRCFake = NULL;
     const char *extensions = NULL;
-    int is_arb_pixel_format = 0;
-    PIXELFORMATDESCRIPTOR pfd = {
-        sizeof (PIXELFORMATDESCRIPTOR),
-        1,
-        PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL,
-        PFD_TYPE_RGBA,
-        32,
-        0, 0, 0, 0, 0, 0,
-        0,
-        0,
-        0,
-        0, 0, 0, 0,
-        24,
-        8,
-        0,
-        PFD_MAIN_PLANE,
-        0,
-        0, 0, 0
-    };
+    PIXELFORMATDESCRIPTOR pfd = {0};
+
     HINSTANCE hInstance = GetModuleHandle (NULL);
-    memset (&wc, 0, sizeof (wc));
+    pfd.nSize = sizeof (PIXELFORMATDESCRIPTOR);
+    pfd.nVersion = 1;
+    pfd.dwFlags = PFD_DEPTH_DONTCARE | PFD_DOUBLEBUFFER_DONTCARE |
+                  PFD_STEREO_DONTCARE | PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL;
+    pfd.iPixelType = PFD_TYPE_RGBA;
+    pfd.iLayerType = PFD_MAIN_PLANE;
     wc.cbSize = sizeof (WNDCLASSEX);
-    wc.hCursor = LoadCursor (NULL, IDC_ARROW);
     wc.hInstance = hInstance;
     wc.lpfnWndProc = DefWindowProc;
     wc.lpszClassName = FakeClass;
@@ -509,71 +498,47 @@ EGLint platform_display_initialize (PlatformDisplay *display,
     }
 
     /* Creating fake context */
-    fake_window = CreateWindowEx (0, wc.lpszClassName, _T ("OpenGL Window"),
+    fake_window = CreateWindowEx (0, FakeClass, _T ("OpenGL Window"),
                                   WS_OVERLAPPEDWINDOW | WS_MAXIMIZE | WS_CLIPCHILDREN,
-                                  CW_USEDEFAULT, CW_USEDEFAULT, 640, 480, 0, 0, hInstance, 0);
-
+                                  CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+                                  CW_USEDEFAULT, 0, 0, hInstance, 0);
     hDC = GetDC (fake_window);
-
-
-
     iPixelFormat = ChoosePixelFormat (hDC, &pfd);
-    if (iPixelFormat == 0) {
-        ReleaseDC (fake_window, hDC);
-        DestroyWindow (fake_window);
-        UnregisterClass (FakeClass, hInstance);
-        return 0;
+    if (iPixelFormat != 0) {
+        success = SetPixelFormat (hDC, iPixelFormat, &pfd);
     }
-
-    if (!SetPixelFormat (hDC, iPixelFormat, &pfd)) {
-        ReleaseDC (fake_window, hDC);
-        DestroyWindow (fake_window);
-        UnregisterClass (FakeClass, hInstance);
-        return 0;
+    if (success) {
+        hRCFake = wglCreateContext (hDC);
     }
-
-    hRCFake = wglCreateContext (hDC);
-    if (hRCFake == NULL) {
-        ReleaseDC (fake_window, hDC);
-        DestroyWindow (fake_window);
-        UnregisterClass (FakeClass, hInstance);
-        return 0;
+    if (hRCFake != NULL) {
+        wglMakeCurrent (hDC, hRCFake);
+        display->wglGetExtensionsStringARB = (PFNWGLGETEXTENSIONSSTRINGARBPROC)
+                                             wglGetProcAddress ("wglGetExtensionsStringARB");
     }
-    wglMakeCurrent (hDC, hRCFake);
-    display->wglGetExtensionsStringARB = (PFNWGLGETEXTENSIONSSTRINGARBPROC)
-                                         wglGetProcAddress ("wglGetExtensionsStringARB");
-
-    if (display->wglGetExtensionsStringARB == NULL) {
+    if (display->wglGetExtensionsStringARB != NULL) {
+        extensions = display->wglGetExtensionsStringARB (hDC);
+        if (is_extension_supported (extensions, "WGL_ARB_create_context")) {
+            display->wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)
+                                                  wglGetProcAddress ("wglCreateContextAttribsARB");
+            display->is_arb_context_profile = is_extension_supported (extensions,
+                                              "WGL_ARB_create_context_profile");
+        }
+        if (is_extension_supported (extensions, "WGL_ARB_pixel_format")) {
+            display->wglGetPixelFormatAttribivARB = (PFNWGLGETPIXELFORMATATTRIBIVARBPROC)
+                                                    wglGetProcAddress ("wglGetPixelFormatAttribivARB");
+            result = wgl_populate_from_arb_pixel_format (display, config_list);
+        } else {
+            result =  wgl_populate_default (display, config_list);
+        }
+    }
+    if (hRCFake != NULL) {
         wglMakeCurrent (NULL, NULL);
         wglDeleteContext (hRCFake);
-        ReleaseDC (fake_window, hDC);
-        DestroyWindow (fake_window);
-        UnregisterClass (FakeClass, hInstance);
-        return 0;
     }
-
-    extensions = display->wglGetExtensionsStringARB (hDC);
-    if (is_extension_supported (extensions, "WGL_ARB_create_context")) {
-        display->wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)
-                                              wglGetProcAddress ("wglCreateContextAttribsARB");
-        display->is_arb_context_profile = is_extension_supported (extensions,
-                                          "WGL_ARB_create_context_profile");
-    }
-
-    if (is_extension_supported (extensions, "WGL_ARB_pixel_format")) {
-        display->wglGetPixelFormatAttribivARB = (PFNWGLGETPIXELFORMATATTRIBIVARBPROC)
-                                                wglGetProcAddress ("wglGetPixelFormatAttribivARB");
-        is_arb_pixel_format = (display->wglGetPixelFormatAttribivARB != NULL);
-    }
-    wglMakeCurrent (NULL, NULL);
-    wglDeleteContext (hRCFake);
     ReleaseDC (fake_window, hDC);
     DestroyWindow (fake_window);
     UnregisterClass (FakeClass, hInstance);
-    if (is_arb_pixel_format) {
-        return wgl_populate_from_arb_pixel_format (display, config_list);
-    }
-    return wgl_populate_default (display, config_list);
+    return result;
 }
 
 EGLBoolean platform_make_current (PlatformDisplay *display,
