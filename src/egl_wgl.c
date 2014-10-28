@@ -114,29 +114,114 @@ struct PlatformDisplayAttributes {
     EGLNativeDisplayType native_display;
 };
 
+typedef struct WGLOpenGLContext {
+    ContextAttributes *attributes;
+    HGLRC glrc;
+} WGLOpenGLContext;
+
+static const LPCWSTR FakeClass = _T ("MyFakeOpenGLWindowClass");
+
 void *platform_create_context (PlatformDisplay *display,
                                EGLProxyConfig *egl_config,
                                ContextAttributes *attributes)
 {
+    /*Create Fake window class */
+    WNDCLASSEX wc;
+    HWND fake_window = NULL;
+    HDC hDC = NULL;
+    HGLRC hRCFake = NULL;
+    PIXELFORMATDESCRIPTOR pfd = {0};
+    WGLOpenGLContext *result = NULL;
+    HINSTANCE hInstance = GetModuleHandle (NULL);
+    memset (&wc, 0, sizeof (wc));
+    wc.cbSize = sizeof (WNDCLASSEX);
+    wc.hCursor = LoadCursor (NULL, IDC_ARROW);
+    wc.hInstance = hInstance;
+    wc.lpfnWndProc = DefWindowProc;
+    wc.lpszClassName = FakeClass;
+    wc.style = CS_OWNDC;
+    if ( RegisterClassEx (&wc) == 0 ) {
+        return NULL;
+    }
+
+    /* Creating fake context */
+    fake_window = CreateWindowEx (0, wc.lpszClassName, _T ("OpenGL Window"),
+                                  WS_OVERLAPPEDWINDOW | WS_MAXIMIZE | WS_CLIPCHILDREN,
+                                  CW_USEDEFAULT, CW_USEDEFAULT, 640, 480, 0, 0,
+                                  hInstance, 0);
+    hDC = GetDC (fake_window);
+    DescribePixelFormat (hDC, egl_config->native_visual_id,
+                         sizeof (PIXELFORMATDESCRIPTOR), &pfd);
+    if (!SetPixelFormat (hDC, egl_config->native_visual_id, &pfd)) {
+        ReleaseDC (fake_window, hDC);
+        DestroyWindow (fake_window);
+        UnregisterClass (FakeClass, hInstance);
+        return NULL;
+    }
+    if (display->wglCreateContextAttribsARB) {
+        int context_attribs[] = {
+            WGL_CONTEXT_MAJOR_VERSION_ARB, 1,
+            WGL_CONTEXT_MINOR_VERSION_ARB, 0,
+            0
+        };
+        context_attribs[1] = attributes->major_version;
+        context_attribs[3] = attributes->major_version;
+        hRCFake = display->wglCreateContextAttribsARB (hDC, NULL, context_attribs);
+    } else {
+        hRCFake = wglCreateContext (hDC);
+    }
+    if (hRCFake == NULL) {
+        ReleaseDC (fake_window, hDC);
+        DestroyWindow (fake_window);
+        UnregisterClass (FakeClass, hInstance);
+        return NULL;
+    }
+    wglDeleteContext (hRCFake);
+    ReleaseDC (fake_window, hDC);
+    DestroyWindow (fake_window);
+    UnregisterClass (FakeClass, hInstance);
+
+    result = (WGLOpenGLContext *)malloc (sizeof (WGLOpenGLContext));
+    if (result != NULL) {
+        result->attributes = (ContextAttributes *) malloc (sizeof (ContextAttributes));
+        if (result->attributes != NULL) {
+            memcpy (result->attributes, attributes, sizeof (ContextAttributes));
+            result->glrc = NULL;
+            return result;
+        }
+        free (result);
+    }
     return NULL;
 }
 
 void platform_context_destroy (PlatformDisplay *display, void *context)
 {
-
+    WGLOpenGLContext *wgl_context = (WGLOpenGLContext *)context;
+    if (wgl_context->glrc != NULL) {
+        wglDeleteContext (wgl_context->glrc);
+    }
+    free (wgl_context->attributes);
+    free (wgl_context);
 }
 
 void *platform_window_surface_create (PlatformDisplay *display,
                                       EGLProxyConfig *egl_config,
                                       EGLNativeWindowType win)
 {
-    return NULL;
+    HDC hDC = NULL;
+    PIXELFORMATDESCRIPTOR pfd = {0};
+    hDC = GetDC (win);
+    if (GetPixelFormat (hDC) != egl_config->native_visual_id) {
+        ReleaseDC (win, hDC);
+        return NULL;
+    }
+    return hDC;
 }
 
 void platform_window_surface_destroy (PlatformDisplay *display,
                                       void *drawable)
 {
-
+    ReleaseDC (WindowFromDC ((HDC)drawable), (HDC) drawable);
 }
 
 PlatformDisplay *platform_display_create (const PlatformDisplayAttributes
@@ -303,7 +388,7 @@ EGLint platform_display_initialize (PlatformDisplay *display,
     wc.hCursor = LoadCursor (NULL, IDC_ARROW);
     wc.hInstance = hInstance;
     wc.lpfnWndProc = DefWindowProc;
-    wc.lpszClassName = _T ("MyFakeOpenGLWindowClass");
+    wc.lpszClassName = FakeClass;
     wc.style = CS_OWNDC;
     if ( RegisterClassEx (&wc) == 0 ) {
         return 0;
@@ -322,14 +407,14 @@ EGLint platform_display_initialize (PlatformDisplay *display,
     if (iPixelFormat == 0) {
         ReleaseDC (fake_window, hDC);
         DestroyWindow (fake_window);
-        UnregisterClass (_T ("MyFakeOpenGLWindowClass"), hInstance);
+        UnregisterClass (FakeClass, hInstance);
         return 0;
     }
 
     if (!SetPixelFormat (hDC, iPixelFormat, &pfd)) {
         ReleaseDC (fake_window, hDC);
         DestroyWindow (fake_window);
-        UnregisterClass (_T ("MyFakeOpenGLWindowClass"), hInstance);
+        UnregisterClass (FakeClass, hInstance);
         return 0;
     }
 
@@ -337,7 +422,7 @@ EGLint platform_display_initialize (PlatformDisplay *display,
     if (hRCFake == NULL) {
         ReleaseDC (fake_window, hDC);
         DestroyWindow (fake_window);
-        UnregisterClass (_T ("MyFakeOpenGLWindowClass"), hInstance);
+        UnregisterClass (FakeClass, hInstance);
         return 0;
     }
     wglMakeCurrent (hDC, hRCFake);
@@ -349,7 +434,7 @@ EGLint platform_display_initialize (PlatformDisplay *display,
         wglDeleteContext (hRCFake);
         ReleaseDC (fake_window, hDC);
         DestroyWindow (fake_window);
-        UnregisterClass (_T ("MyFakeOpenGLWindowClass"), hInstance);
+        UnregisterClass (FakeClass, hInstance);
         return 0;
     }
 
@@ -374,7 +459,7 @@ EGLint platform_display_initialize (PlatformDisplay *display,
     wglDeleteContext (hRCFake);
     ReleaseDC (fake_window, hDC);
     DestroyWindow (fake_window);
-    UnregisterClass (_T ("MyFakeOpenGLWindowClass"), hInstance);
+    UnregisterClass (FakeClass, hInstance);
     if (is_arb_pixel_format) {
         return wgl_populate_from_arb_pixel_format (display, config_list);
     }
@@ -386,13 +471,35 @@ EGLBoolean platform_make_current (PlatformDisplay *display,
                                   EGLProxySurface *read,
                                   EGLProxyContext *ctx)
 {
-    return EGL_FALSE;
+
+
+    if (ctx != NULL) {
+        WGLOpenGLContext *wgl_context = (WGLOpenGLContext *) ctx->platform;
+        if (wgl_context->glrc == NULL) {
+            if (display->wglCreateContextAttribsARB) {
+                int context_attribs[] = {
+                    WGL_CONTEXT_MAJOR_VERSION_ARB, 1,
+                    WGL_CONTEXT_MINOR_VERSION_ARB, 0,
+                    0
+                };
+                context_attribs[1] = wgl_context->attributes->major_version;
+                context_attribs[3] = wgl_context->attributes->minor_version;
+                wgl_context->glrc = display->wglCreateContextAttribsARB ((HDC)draw->platform,
+                                    NULL, context_attribs);
+            } else {
+                wgl_context->glrc = wglCreateContext ((HDC)draw->platform);
+            }
+        }
+        return wglMakeCurrent ((HDC)draw->platform,
+                               wgl_context->glrc) ? EGL_TRUE : EGL_FALSE;
+    }
+    return wglMakeCurrent (NULL, NULL) ? EGL_TRUE : EGL_FALSE;
 }
 
 EGLBoolean platform_swap_buffers (PlatformDisplay *display,
                                   EGLProxySurface *surface)
 {
-    return EGL_FALSE;
+    return SwapBuffers ((HDC)surface->platform) ? EGL_TRUE : EGL_FALSE;
 }
 
 PlatformDisplayAttributes *platform_display_attributes_create (EGLenum platform,
