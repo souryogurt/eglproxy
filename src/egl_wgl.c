@@ -324,9 +324,14 @@ static EGLint wgl_populate_default (PlatformDisplay *display,
         egl_config->double_buffer = (pfd.dwFlags & PFD_DOUBLEBUFFER) ? EGL_TRUE :
                                     EGL_FALSE;
         egl_config->color_buffer_type = EGL_RGB_BUFFER;
-        /*TODO: CHECK THIS FLAGS!!!!! */
-        egl_config->config_caveat = (pfd.dwFlags & PFD_GENERIC_ACCELERATED) ? EGL_NONE :
-                                    EGL_SLOW_CONFIG;
+        if (! (pfd.dwFlags & PFD_GENERIC_ACCELERATED)
+                && ! (pfd.dwFlags & PFD_GENERIC_FORMAT)) {
+            egl_config->config_caveat = EGL_NONE;
+        } else if (pfd.dwFlags & PFD_GENERIC_FORMAT) {
+            egl_config->config_caveat = EGL_SLOW_CONFIG;
+        } else {
+            egl_config->config_caveat = EGL_NON_CONFORMANT_CONFIG;
+        }
         egl_config->conformant = EGL_OPENGL_BIT;
         egl_config->renderable_type = EGL_OPENGL_BIT;
         egl_config->depth_size = pfd.cDepthBits;
