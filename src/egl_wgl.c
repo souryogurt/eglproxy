@@ -97,6 +97,11 @@ typedef BOOL (WINAPI *PFNWGLGETPIXELFORMATATTRIBIVARBPROC) (HDC hdc,
         int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes,
         int *piValues);
 #endif /* WGL_ARB_pixel_format */
+#ifndef WGL_ARB_multisample
+#define WGL_ARB_multisample 1
+#define WGL_SAMPLE_BUFFERS_ARB            0x2041
+#define WGL_SAMPLES_ARB                   0x2042
+#endif /* WGL_ARB_multisample */
 
 struct PlatformDisplay {
     HDC hdc;
@@ -104,6 +109,7 @@ struct PlatformDisplay {
     PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB;
     PFNWGLGETPIXELFORMATATTRIBIVARBPROC wglGetPixelFormatAttribivARB;
     int is_arb_context_profile; /**< Is WGL_ARB_create_context_profile there*/
+    int is_arb_multisample; /**< Is WGL_ARB_multisample there */
 };
 
 struct PlatformDisplayAttributes {
@@ -301,7 +307,6 @@ static EGLint wgl_populate_from_arb_pixel_format (PlatformDisplay *display,
             &attribute, &max_pixel_format)) {
         return 0;
     }
-
     list = (EGLProxyConfig *) calloc ((size_t)max_pixel_format,
                                       sizeof (EGLProxyConfig));
     if (list == NULL) {
@@ -363,8 +368,19 @@ static EGLint wgl_populate_from_arb_pixel_format (PlatformDisplay *display,
         egl_config->native_visual_id = (EGLint) pixel_format;
         egl_config->native_visual_type = 0;
         /* TODO: implement using ARB_Multisample */
-        egl_config->sample_buffers = 0;
-        egl_config->samples = 0;
+        if (display->is_arb_multisample) {
+            attribute = WGL_SAMPLE_BUFFERS_ARB;
+            display->wglGetPixelFormatAttribivARB (display->hdc, pixel_format,
+                                                   0, 1, &attribute,
+                                                   &egl_config->sample_buffers);
+            attribute = WGL_SAMPLES_ARB;
+            display->wglGetPixelFormatAttribivARB (display->hdc, pixel_format,
+                                                   0, 1, &attribute,
+                                                   &egl_config->samples);
+        } else {
+            egl_config->sample_buffers = 0;
+            egl_config->samples = 0;
+        }
         egl_config->stencil_size = values[11];
         egl_config->surface_type = 0;
         egl_config->surface_type |= values[12] ? EGL_WINDOW_BIT : 0;
@@ -392,7 +408,8 @@ static EGLint wgl_populate_default (PlatformDisplay *display,
     EGLProxyConfig *egl_config = NULL;
 
     max_pixel_format = DescribePixelFormat (display->hdc, pixel_format,
-                                            sizeof (PIXELFORMATDESCRIPTOR), NULL);
+                                            sizeof (PIXELFORMATDESCRIPTOR),
+                                            NULL);
     list = (EGLProxyConfig *) calloc ((size_t)max_pixel_format,
                                       sizeof (EGLProxyConfig));
     if (list == NULL) {
@@ -444,7 +461,6 @@ static EGLint wgl_populate_default (PlatformDisplay *display,
                                         EGL_FALSE;
         egl_config->native_visual_id = (EGLint) pixel_format;
         egl_config->native_visual_type = 0;
-        /* TODO: implement using ARB_Multisample */
         egl_config->sample_buffers = 0;
         egl_config->samples = 0;
         egl_config->stencil_size = pfd.cStencilBits;
@@ -519,6 +535,8 @@ EGLint platform_display_initialize (PlatformDisplay *display,
         if (is_extension_supported (extensions, "WGL_ARB_pixel_format")) {
             display->wglGetPixelFormatAttribivARB = (PFNWGLGETPIXELFORMATATTRIBIVARBPROC)
                                                     wglGetProcAddress ("wglGetPixelFormatAttribivARB");
+            display->is_arb_multisample = is_extension_supported (extensions,
+                                          "WGL_ARB_multisample");
             result = wgl_populate_from_arb_pixel_format (display, config_list);
         } else {
             result =  wgl_populate_default (display, config_list);
