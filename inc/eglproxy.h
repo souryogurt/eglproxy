@@ -76,6 +76,7 @@ typedef struct PlatformDisplayAttributes PlatformDisplayAttributes;
 
 typedef struct EGLProxyDisplay {
     struct EGLProxyDisplay *next;
+    PlatformDisplayAttributes *attributes;
     EGLProxyConfig *configs;
     EGLProxyContext *contexts;
     EGLProxySurface *surfaces;

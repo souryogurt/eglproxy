@@ -915,27 +915,22 @@ EGLDisplay EGLAPIENTRY eglGetPlatformDisplay (EGLenum platform,
 
     while (display != NULL) {
         if (platform_display_has_attributes (display, display_attributes)) {
-            eglSetError (EGL_SUCCESS);
             free (display_attributes);
+            eglSetError (EGL_SUCCESS);
             return (EGLDisplay) display;
         }
         display = display->next;
     }
     display = (EGLProxyDisplay *) calloc (1, sizeof (EGLProxyDisplay));
     if (display != NULL) {
-        display->platform = platform_display_create (display_attributes);
-        free (display_attributes);
-        if (display->platform != NULL) {
-            display->display_id = (EGLNativeDisplayType)native_display;
-            display->next = displays;
-            displays = display;
-            eglSetError (EGL_SUCCESS);
-            return (EGLDisplay) display;
-        }
-        free (display);
-    } else {
-        free (display_attributes);
+        display->attributes = display_attributes;
+        display->display_id = (EGLNativeDisplayType)native_display;
+        display->next = displays;
+        displays = display;
+        eglSetError (EGL_SUCCESS);
+        return (EGLDisplay) display;
     }
+    free (display_attributes);
     return EGL_NO_DISPLAY;
 }
 
@@ -956,11 +951,17 @@ EGLBoolean EGLAPIENTRY eglInitialize (EGLDisplay dpy, EGLint *major,
         return EGL_FALSE;
     }
     if (egl_display->initialized == EGL_FALSE) {
-        egl_display->n_configs = platform_display_initialize (
-                                     egl_display->platform,
-                                     &egl_display->configs);
-        if (egl_display->n_configs > 0) {
-            egl_display->initialized = EGL_TRUE;
+        egl_display->platform = platform_display_create (egl_display->attributes);
+        if (egl_display->platform != NULL) {
+            egl_display->n_configs = platform_display_initialize (
+                                         egl_display->platform,
+                                         &egl_display->configs);
+            if (egl_display->n_configs > 0) {
+                egl_display->initialized = EGL_TRUE;
+            } else {
+                platform_display_destroy (egl_display->platform,
+                                          egl_display->display_id);
+            }
         }
     }
 
@@ -1070,6 +1071,10 @@ EGLBoolean EGLAPIENTRY eglTerminate (EGLDisplay dpy)
         eglSetError (EGL_BAD_DISPLAY);
         return EGL_FALSE;
     }
+    if (egl_display->initialized == EGL_FALSE) {
+        eglSetError (EGL_SUCCESS);
+        return EGL_TRUE;
+    }
     while (egl_display->contexts != NULL) {
         EGLProxyContext *context = egl_display->contexts;
         egl_display->contexts = egl_display->contexts->next;
@@ -1083,6 +1088,7 @@ EGLBoolean EGLAPIENTRY eglTerminate (EGLDisplay dpy)
         free (surface);
     }
     free (egl_display->configs);
+    platform_display_destroy (egl_display->platform, egl_display->display_id);
     egl_display->initialized = EGL_FALSE;
     eglSetError (EGL_SUCCESS);
     return EGL_TRUE;

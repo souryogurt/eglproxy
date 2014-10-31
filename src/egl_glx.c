@@ -142,8 +142,8 @@ PlatformDisplayAttributes *platform_display_attributes_create (EGLenum platform,
 int platform_display_has_attributes (const EGLProxyDisplay *display,
                                      const PlatformDisplayAttributes *attributes)
 {
-    return (display->display_id == attributes->native_display) &&
-           (display->platform->screen == attributes->screen);
+    return (display->attributes->native_display == attributes->native_display) &&
+           (display->attributes->screen == attributes->screen);
 }
 
 PlatformDisplay *platform_display_create (const PlatformDisplayAttributes
