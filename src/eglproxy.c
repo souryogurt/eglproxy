@@ -955,15 +955,20 @@ EGLBoolean EGLAPIENTRY eglInitialize (EGLDisplay dpy, EGLint *major,
         eglSetError (EGL_BAD_DISPLAY);
         return EGL_FALSE;
     }
-    if (egl_display->initialized != EGL_TRUE) {
-        egl_display->n_configs = platform_display_initialize (egl_display->platform,
-                                 &egl_display->configs);
+    if (egl_display->initialized == EGL_FALSE) {
+        egl_display->n_configs = platform_display_initialize (
+                                     egl_display->platform,
+                                     &egl_display->configs);
+        if (egl_display->n_configs > 0) {
+            egl_display->initialized = EGL_TRUE;
+        }
     }
 
-    if (egl_display->n_configs > 0) {
-        *major = 1;
-        *minor = 5;
-        egl_display->initialized = EGL_TRUE;
+    if (egl_display->initialized) {
+        if ((major != NULL) && (minor != NULL)) {
+            *major = 1;
+            *minor = 5;
+        }
         eglSetError (EGL_SUCCESS);
         return EGL_TRUE;
     }
