@@ -941,34 +941,7 @@ EGLDisplay EGLAPIENTRY eglGetPlatformDisplay (EGLenum platform,
 
 EGLDisplay EGLAPIENTRY eglGetDisplay (EGLNativeDisplayType display_id)
 {
-    EGLProxyDisplay *display = displays;
-    const EGLenum platform = EGL_PLATFORM_X11_KHR;
-    PlatformDisplayAttributes *display_attributes =
-        platform_display_attributes_create (platform, display_id, NULL);
-    while (display != NULL) {
-        if (platform_display_has_attributes (display, display_attributes)) {
-            eglSetError (EGL_SUCCESS);
-            free (display_attributes);
-            return (EGLDisplay) display;
-        }
-        display = display->next;
-    }
-    display = (EGLProxyDisplay *) calloc (1, sizeof (EGLProxyDisplay));
-    if (display != NULL) {
-        display->platform = platform_display_create (display_attributes);
-        free (display_attributes);
-        if (display->platform != NULL) {
-            display->display_id = display_id;
-            display->next = displays;
-            displays = display;
-            eglSetError (EGL_SUCCESS);
-            return (EGLDisplay) display;
-        }
-        free (display);
-    } else {
-        free (display_attributes);
-    }
-    return EGL_NO_DISPLAY;
+    return eglGetPlatformDisplay (EGL_PLATFORM_X11_KHR, display_id, NULL);
 }
 
 EGLBoolean EGLAPIENTRY eglInitialize (EGLDisplay dpy, EGLint *major,
