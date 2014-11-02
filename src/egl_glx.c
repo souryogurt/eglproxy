@@ -89,7 +89,8 @@ void platform_context_destroy (PlatformDisplay *display, void *context)
 }
 
 void *platform_window_surface_create (PlatformDisplay *display,
-                                      EGLProxyConfig *egl_config, EGLNativeWindowType win)
+                                      EGLProxyConfig *egl_config,
+                                      EGLNativeWindowType win)
 {
     GLXDrawable result = win;
     if (display->is_modern) {
@@ -291,8 +292,8 @@ static EGLint glx_populate_from_fbconfigs (PlatformDisplay *display,
             int n_visualinfo = 0;
             XVisualInfo *info = NULL;
             info_template.visualid = (VisualID) egl_config->native_visual_id;
-            info = XGetVisualInfo (display->x11_display, VisualIDMask, &info_template,
-                                   &n_visualinfo);
+            info = XGetVisualInfo (display->x11_display, VisualIDMask,
+                                   &info_template, &n_visualinfo);
             if (info ) {
                 glXGetConfig (display->x11_display, info, GLX_SAMPLE_BUFFERS_ARB,
                               (int *)&egl_config->sample_buffers);
@@ -536,7 +537,8 @@ EGLint platform_display_initialize (PlatformDisplay *display,
 }
 
 EGLBoolean platform_make_current (PlatformDisplay *display,
-                                  EGLProxySurface *draw, EGLProxySurface *read, EGLProxyContext *ctx)
+                                  EGLProxySurface *draw, EGLProxySurface *read,
+                                  EGLProxyContext *ctx)
 {
     GLXDrawable x11_draw = draw ? (GLXDrawable) draw->platform : (GLXDrawable)NULL;
     GLXDrawable x11_read = read ? (GLXDrawable) read->platform : (GLXDrawable)NULL;

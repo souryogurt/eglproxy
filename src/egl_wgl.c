@@ -94,8 +94,8 @@ typedef HGLRC (WINAPI *PFNWGLCREATECONTEXTATTRIBSARBPROC) (HDC hDC,
 #define WGL_TYPE_RGBA_ARB                 0x202B
 #define WGL_TYPE_COLORINDEX_ARB           0x202C
 typedef BOOL (WINAPI *PFNWGLGETPIXELFORMATATTRIBIVARBPROC) (HDC hdc,
-        int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes,
-        int *piValues);
+        int iPixelFormat, int iLayerPlane, UINT nAttributes,
+        const int *piAttributes, int *piValues);
 #endif /* WGL_ARB_pixel_format */
 #ifndef WGL_ARB_multisample
 #define WGL_ARB_multisample 1
