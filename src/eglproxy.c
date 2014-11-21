@@ -1046,6 +1046,7 @@ const char *EGLAPIENTRY eglQueryString (EGLDisplay dpy, EGLint name)
         case EGL_EXTENSIONS:
             return "";
         default:
+            eglSetError (EGL_BAD_PARAMETER);
             return NULL;
     }
     return NULL;
