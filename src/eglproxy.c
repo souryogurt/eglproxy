@@ -1017,24 +1017,32 @@ EGLBoolean EGLAPIENTRY eglMakeCurrent (EGLDisplay dpy, EGLSurface draw,
 const char *EGLAPIENTRY eglQueryString (EGLDisplay dpy, EGLint name)
 {
     EGLProxyDisplay *egl_display = displays;
-    while ((egl_display != NULL) && (egl_display != dpy)) {
-        egl_display = egl_display->next;
+    if (dpy != EGL_NO_DISPLAY) {
+        while ((egl_display != NULL) && (egl_display != dpy)) {
+            egl_display = egl_display->next;
+        }
+        if (egl_display == NULL) {
+            eglSetError (EGL_BAD_DISPLAY);
+            return NULL;
+        }
+        if (egl_display->initialized == EGL_FALSE) {
+            eglSetError (EGL_NOT_INITIALIZED);
+            return NULL;
+        }
+    } else {
+        if (name != EGL_EXTENSIONS && name != EGL_VERSION) {
+            eglSetError (EGL_BAD_DISPLAY);
+            return NULL;
+        }
     }
-    if (egl_display == NULL) {
-        eglSetError (EGL_BAD_DISPLAY);
-        return NULL;
-    }
-    if (egl_display->initialized == EGL_FALSE) {
-        eglSetError (EGL_NOT_INITIALIZED);
-        return NULL;
-    }
+    eglSetError (EGL_SUCCESS);
     switch (name) {
         case EGL_CLIENT_APIS:
             return "OpenGL";
         case EGL_VENDOR:
             return "SOURYOGURT";
         case EGL_VERSION:
-            return "1.4";
+            return "1.5";
         case EGL_EXTENSIONS:
             return "";
         default:
