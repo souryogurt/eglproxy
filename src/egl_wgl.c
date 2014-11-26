@@ -607,3 +607,10 @@ int platform_display_has_attributes (const EGLProxyDisplay *display,
 {
     return (display->attributes->native_display == attributes->native_display);
 }
+
+__eglMustCastToProperFunctionPointerType platform_get_proc_address (
+    const char *procname)
+{
+    return (__eglMustCastToProperFunctionPointerType)wglGetProcAddress ((
+                LPCSTR)procname);
+}

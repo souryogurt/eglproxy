@@ -557,3 +557,10 @@ EGLBoolean platform_swap_buffers (PlatformDisplay *display,
     glXSwapBuffers (display->x11_display, (GLXDrawable) surface->platform);
     return EGL_TRUE;
 }
+
+__eglMustCastToProperFunctionPointerType platform_get_proc_address (
+    const char *procname)
+{
+    return (__eglMustCastToProperFunctionPointerType)glXGetProcAddressARB ((
+                const GLubyte *)procname);
+}

@@ -1,5 +1,6 @@
 #include "eglproxy.h"
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct EGLProxyConfigEntry {
     EGLProxyConfig *config;
@@ -1138,4 +1139,61 @@ EGLBoolean EGLAPIENTRY eglGetConfigs (EGLDisplay dpy, EGLConfig *configs,
     }
     eglSetError (EGL_SUCCESS);
     return EGL_TRUE;
+}
+
+__eglMustCastToProperFunctionPointerType EGLAPIENTRY eglGetProcAddress (
+    const char *procname)
+{
+    if (strcmp (procname, "eglGetProcAddress") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglGetProcAddress;
+    }
+    if (strcmp (procname, "eglBindAPI") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglBindAPI;
+    }
+    if (strcmp (procname, "eglChooseConfig") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglChooseConfig;
+    }
+    if (strcmp (procname, "eglCreateContext") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglCreateContext;
+    }
+    if (strcmp (procname, "eglCreateWindowSurface") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglCreateWindowSurface;
+    }
+    if (strcmp (procname, "eglDestroyContext") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglDestroyContext;
+    }
+    if (strcmp (procname, "eglDestroySurface") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglDestroySurface;
+    }
+    if (strcmp (procname, "eglGetConfigAttrib") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglGetConfigAttrib;
+    }
+    if (strcmp (procname, "eglGetPlatformDisplay") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglGetPlatformDisplay;
+    }
+    if (strcmp (procname, "eglGetDisplay") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglGetDisplay;
+    }
+    if (strcmp (procname, "eglInitialize") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglInitialize;
+    }
+    if (strcmp (procname, "eglMakeCurrent") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglMakeCurrent;
+    }
+    if (strcmp (procname, "eglQueryString") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglQueryString;
+    }
+    if (strcmp (procname, "eglSwapBuffers") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglSwapBuffers;
+    }
+    if (strcmp (procname, "eglTerminate") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglTerminate;
+    }
+    if (strcmp (procname, "eglGetError") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglGetError;
+    }
+    if (strcmp (procname, "eglGetConfigs") == 0) {
+        return (__eglMustCastToProperFunctionPointerType)eglGetConfigs;
+    }
+    return platform_get_proc_address (procname);
 }

@@ -120,6 +120,8 @@ PlatformDisplayAttributes *platform_display_attributes_create (EGLenum platform,
 
 int platform_display_has_attributes (const EGLProxyDisplay *display,
                                      const PlatformDisplayAttributes *attributes);
+__eglMustCastToProperFunctionPointerType platform_get_proc_address (
+    const char *procname);
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }
