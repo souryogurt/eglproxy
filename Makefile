@@ -4,7 +4,7 @@ CPPFLAGS=-I./inc -I/usr/local/include
 ARFLAGS?=rc
 RM?=rm -f
 
-SOURCES = src/eglproxy.c src/egl_glx.c
+SOURCES = src/eglproxy.c src/egl_proc.c src/egl_glx.c
 OBJECTS = $(SOURCES:.c=.o)
 
 libeglproxy.a: $(OBJECTS)
