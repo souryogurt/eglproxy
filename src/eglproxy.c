@@ -896,7 +896,7 @@ EGLBoolean EGLAPIENTRY eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config,
             *value = egl_config->transparent_blue_value;
             break;
         default:
-            eglSetError (EGL_BAD_PARAMETER);
+            eglSetError (EGL_BAD_ATTRIBUTE);
             return EGL_FALSE;
     }
     eglSetError (EGL_SUCCESS);
