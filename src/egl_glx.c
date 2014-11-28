@@ -275,9 +275,12 @@ static EGLint glx_populate_from_fbconfigs (PlatformDisplay *display,
 
         glXGetFBConfigAttrib (display->x11_display, glx_config, GLX_VISUAL_ID,
                               (int *)&egl_config->native_visual_id);
-        glXGetFBConfigAttrib (display->x11_display, glx_config,
-                              GLX_X_VISUAL_TYPE,
-                              (int *)&egl_config->native_visual_type);
+        egl_config->native_visual_type = EGL_NONE;
+        if (egl_config->native_visual_id != 0) {
+            glXGetFBConfigAttrib (display->x11_display, glx_config,
+                                  GLX_X_VISUAL_TYPE,
+                                  (int *)&egl_config->native_visual_type);
+        }
 
         /* Sample buffers are supported only in GLX 1.4 */
         if ((display->glx_minor > 1) ||
@@ -439,8 +442,9 @@ static EGLint glx_populate_from_visualinfos (PlatformDisplay *display,
         /* Native rendering is supported, since config is based on XVisualInfo */
         egl_config->native_renderable = EGL_TRUE;
         egl_config->native_visual_id = (EGLint) info->visualid;
-
-        if ((display->is_ext_visual_info)
+        egl_config->native_visual_type = EGL_NONE;
+        if ((egl_config->native_visual_id != 0)
+                && (display->is_ext_visual_info)
                 && (glXGetConfig (display->x11_display, info, GLX_X_VISUAL_TYPE_EXT,
                                   &value) == 0)) {
             egl_config->native_visual_type = value;
