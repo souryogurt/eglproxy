@@ -211,7 +211,6 @@ static EGLint glx_populate_from_fbconfigs (PlatformDisplay *display,
         if (!value) {
             continue;
         }
-        egl_config->color_buffer_type = EGL_RGB_BUFFER;
 
         glXGetFBConfigAttrib (display->x11_display, glx_config,
                               GLX_CONFIG_CAVEAT, &value);
@@ -224,17 +223,30 @@ static EGLint glx_populate_from_fbconfigs (PlatformDisplay *display,
         }
         egl_config->conformant = EGL_OPENGL_BIT;
         egl_config->renderable_type = EGL_OPENGL_BIT;
-        glXGetFBConfigAttrib (display->x11_display, glx_config, GLX_BUFFER_SIZE,
-                              (int *)&egl_config->buffer_size);
         glXGetFBConfigAttrib (display->x11_display, glx_config, GLX_RED_SIZE,
                               (int *)&egl_config->red_size);
         glXGetFBConfigAttrib (display->x11_display, glx_config, GLX_GREEN_SIZE,
                               (int *)&egl_config->green_size);
         glXGetFBConfigAttrib (display->x11_display, glx_config, GLX_BLUE_SIZE,
                               (int *)&egl_config->blue_size);
-        egl_config->luminance_size = 0;
         glXGetFBConfigAttrib (display->x11_display, glx_config, GLX_ALPHA_SIZE,
                               (int *)&egl_config->alpha_size);
+        if ((egl_config->red_size != 0) && (egl_config->green_size != 0)
+                && (egl_config->blue_size != 0)) {
+            egl_config->color_buffer_type = EGL_RGB_BUFFER;
+            egl_config->luminance_size = 0;
+            egl_config->buffer_size = egl_config->red_size + egl_config->green_size +
+                                      egl_config->blue_size + egl_config->alpha_size;
+        } else if ((egl_config->red_size != 0) && (egl_config->green_size == 0)
+                   && (egl_config->blue_size == 0)) {
+            egl_config->color_buffer_type = EGL_LUMINANCE_BUFFER;
+            egl_config->luminance_size = egl_config->red_size;
+            egl_config->red_size = 0;
+            egl_config->buffer_size = egl_config->luminance_size +
+                                      egl_config->alpha_size;
+        } else {
+            continue; /* Skip configs with RX GX B0 */
+        }
         egl_config->alpha_mask_size = 0;
         egl_config->bind_to_texture_rgb = EGL_FALSE;
         egl_config->bind_to_texture_rgba = EGL_FALSE;
@@ -366,8 +378,6 @@ static EGLint glx_populate_from_visualinfos (PlatformDisplay *display,
         if (err != 0 || value == False) {
             continue;
         }
-        err = glXGetConfig (display->x11_display, info, GLX_BUFFER_SIZE,
-                            (int *) &egl_config->buffer_size);
         if (err == 0) {
             err = glXGetConfig (display->x11_display, info, GLX_RED_SIZE,
                                 (int *) &egl_config->red_size);
@@ -380,10 +390,25 @@ static EGLint glx_populate_from_visualinfos (PlatformDisplay *display,
             err = glXGetConfig (display->x11_display, info, GLX_BLUE_SIZE,
                                 (int *) &egl_config->blue_size);
         }
-        egl_config->luminance_size = 0;
         if (err == 0) {
             err = glXGetConfig (display->x11_display, info, GLX_ALPHA_SIZE,
                                 (int *) &egl_config->alpha_size);
+        }
+        if ((egl_config->red_size != 0) && (egl_config->green_size != 0)
+                && (egl_config->blue_size != 0)) {
+            egl_config->color_buffer_type = EGL_RGB_BUFFER;
+            egl_config->luminance_size = 0;
+            egl_config->buffer_size = egl_config->red_size + egl_config->green_size +
+                                      egl_config->blue_size + egl_config->alpha_size;
+        } else if ((egl_config->red_size != 0) && (egl_config->green_size == 0)
+                   && (egl_config->blue_size == 0)) {
+            egl_config->color_buffer_type = EGL_LUMINANCE_BUFFER;
+            egl_config->luminance_size = egl_config->red_size;
+            egl_config->red_size = 0;
+            egl_config->buffer_size = egl_config->luminance_size +
+                                      egl_config->alpha_size;
+        } else {
+            continue; /* Skip configs with RX GX B0 */
         }
         egl_config->alpha_mask_size = 0;
         egl_config->bind_to_texture_rgb = 0;
@@ -398,7 +423,6 @@ static EGLint glx_populate_from_visualinfos (PlatformDisplay *display,
         if (err != 0 || value != True) {
             continue;
         }
-        egl_config->color_buffer_type = EGL_RGB_BUFFER;
         egl_config->config_caveat = EGL_NONE;
         if ((display->is_ext_visual_rating)
                 && (glXGetConfig (display->x11_display, info, GLX_VISUAL_CAVEAT_EXT,

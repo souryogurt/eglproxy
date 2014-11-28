@@ -325,19 +325,32 @@ static EGLint wgl_populate_from_arb_pixel_format (PlatformDisplay *display,
             continue;
         }
         egl_config->config_id = n_configs + 1;
-        egl_config->buffer_size = values[2];
         egl_config->red_size = values[3];
         egl_config->green_size = values[4];
         egl_config->blue_size = values[5];
-        egl_config->luminance_size = 0;
         egl_config->alpha_size = values[6];
+        if ((egl_config->red_size != 0) && (egl_config->green_size != 0)
+                && (egl_config->blue_size != 0)) {
+            egl_config->color_buffer_type = EGL_RGB_BUFFER;
+            egl_config->luminance_size = 0;
+            egl_config->buffer_size = egl_config->red_size + egl_config->green_size +
+                                      egl_config->blue_size + egl_config->alpha_size;
+        } else if ((egl_config->red_size != 0) && (egl_config->green_size == 0)
+                   && (egl_config->blue_size == 0)) {
+            egl_config->color_buffer_type = EGL_LUMINANCE_BUFFER;
+            egl_config->luminance_size = egl_config->red_size;
+            egl_config->red_size = 0;
+            egl_config->buffer_size = egl_config->luminance_size +
+                                      egl_config->alpha_size;
+        } else {
+            continue; /* Skip configs with RX GX B0 */
+        }
         egl_config->alpha_mask_size = 0;
         /* TODO: implement using WGL_ARB_render_texture */
         egl_config->bind_to_texture_rgb = EGL_FALSE;
         egl_config->bind_to_texture_rgba = EGL_FALSE;
 
         egl_config->double_buffer = values[7] ? EGL_TRUE : EGL_FALSE;
-        egl_config->color_buffer_type = EGL_RGB_BUFFER;
         switch (values[8]) {
             case WGL_NO_ACCELERATION_ARB:
                 egl_config->config_caveat = EGL_SLOW_CONFIG;
@@ -428,18 +441,31 @@ static EGLint wgl_populate_default (PlatformDisplay *display,
             continue;
         }
         egl_config->config_id = n_configs + 1;
-        egl_config->buffer_size = pfd.cColorBits;
         egl_config->red_size = pfd.cRedBits;
         egl_config->green_size = pfd.cGreenBits;
         egl_config->blue_size = pfd.cBlueBits;
-        egl_config->luminance_size = 0;
         egl_config->alpha_size = pfd.cAlphaBits;
+        if ((egl_config->red_size != 0) && (egl_config->green_size != 0)
+                && (egl_config->blue_size != 0)) {
+            egl_config->color_buffer_type = EGL_RGB_BUFFER;
+            egl_config->luminance_size = 0;
+            egl_config->buffer_size = egl_config->red_size + egl_config->green_size +
+                                      egl_config->blue_size + egl_config->alpha_size;
+        } else if ((egl_config->red_size != 0) && (egl_config->green_size == 0)
+                   && (egl_config->blue_size == 0)) {
+            egl_config->color_buffer_type = EGL_LUMINANCE_BUFFER;
+            egl_config->luminance_size = egl_config->red_size;
+            egl_config->red_size = 0;
+            egl_config->buffer_size = egl_config->luminance_size +
+                                      egl_config->alpha_size;
+        } else {
+            continue; /* Skip configs with RX GX B0 */
+        }
         egl_config->alpha_mask_size = 0;
         egl_config->bind_to_texture_rgb = 0;
         egl_config->bind_to_texture_rgba = 0;
         egl_config->double_buffer = (pfd.dwFlags & PFD_DOUBLEBUFFER) ? EGL_TRUE :
                                     EGL_FALSE;
-        egl_config->color_buffer_type = EGL_RGB_BUFFER;
         if (! (pfd.dwFlags & PFD_GENERIC_ACCELERATED)
                 && ! (pfd.dwFlags & PFD_GENERIC_FORMAT)) {
             egl_config->config_caveat = EGL_NONE;
