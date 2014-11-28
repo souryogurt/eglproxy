@@ -45,6 +45,19 @@ typedef struct EGLConfigQuery {
     EGLint max_pbuffer_pixels;
 } EGLConfigQuery;
 
+typedef struct EGLProxyFunction {
+    const char *const name;
+    __eglMustCastToProperFunctionPointerType address;
+} EGLProxyFunction;
+
+enum {
+    TOTAL_KEYWORDS = 91,
+    MIN_WORD_LENGTH = 9,
+    MAX_WORD_LENGTH = 37,
+    MIN_HASH_VALUE = 9,
+    MAX_HASH_VALUE = 166
+};
+
 static const EGLConfigQuery default_query = {
     0, /* EGL_BUFFER_SIZE */
     0, /* EGL_RED_SIZE */
@@ -91,6 +104,124 @@ static const ContextAttributes default_context_attributes = {
     EGL_NO_RESET_NOTIFICATION /* EGL_CONTEXT_OPENGL_RESET_NOTIFICATION_STRATEGY */
 };
 
+static const struct EGLProxyFunction lookup_table[] = {
+    {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL},
+    {"eglWaitGL", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL},
+    {"eglGetError", (__eglMustCastToProperFunctionPointerType)eglGetError},
+    {"", NULL},
+    {"eglGetDisplay", (__eglMustCastToProperFunctionPointerType)eglGetDisplay},
+    {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL},
+    {"eglCreateSync", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglMakeCurrent", (__eglMustCastToProperFunctionPointerType)eglMakeCurrent},
+    {"eglSignalSyncNV", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglQueryAPI", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglGetProcAddress", (__eglMustCastToProperFunctionPointerType)eglGetProcAddress},
+    {"eglWaitNative", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL},
+    {"eglGetCurrentContext", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglSignalSyncKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCreateWindowSurface", (__eglMustCastToProperFunctionPointerType)eglCreateWindowSurface},
+    {"", NULL},
+    {"eglQueryString", (__eglMustCastToProperFunctionPointerType)eglQueryString},
+    {"eglQueryContext", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCreateSyncKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCreatePixmapSurface", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglGetSystemTimeNV", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCreatePixmapSurfaceHI", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglChooseConfig", (__eglMustCastToProperFunctionPointerType)eglChooseConfig},
+    {"eglGetPlatformDisplay", (__eglMustCastToProperFunctionPointerType)eglGetPlatformDisplay},
+    {"eglGetSystemTimeFrequencyNV", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCreateStreamProducerSurfaceKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglGetPlatformDisplayEXT", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCreatePlatformWindowSurface", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCreateStreamFromFileDescriptorKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglStreamConsumerGLTextureExternalKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCreatePlatformWindowSurfaceEXT", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglUnlockSurfaceKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCreatePlatformPixmapSurface", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCreateContext", (__eglMustCastToProperFunctionPointerType)eglCreateContext},
+    {"eglCreatePbufferFromClientBuffer", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCreatePlatformPixmapSurfaceEXT", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglDestroySync", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglFenceNV", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglWaitSync", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglClientWaitSync", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCreateStreamKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglWaitSyncKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL},
+    {"eglDestroySyncNV", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglDestroyContext", (__eglMustCastToProperFunctionPointerType)eglDestroyContext},
+    {"eglReleaseTexImage", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglClientWaitSyncNV", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCreateFenceSyncNV", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL},
+    {"eglStreamConsumerReleaseKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglGetConfigs", (__eglMustCastToProperFunctionPointerType)eglGetConfigs},
+    {"eglSwapBuffers", (__eglMustCastToProperFunctionPointerType)eglSwapBuffers},
+    {"eglQuerySurface", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCreateStreamSyncNV", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglQueryNativePixmapNV", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglQueryNativeDisplayNV", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCopyBuffers", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglSwapInterval", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCreateDRMImageMESA", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglStreamConsumerAcquireKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglWaitClient", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL},
+    {"eglBindTexImage", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglGetSyncAttrib", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglQueryStreamKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglCreatePbufferSurface", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL}, {"", NULL},
+    {"eglSurfaceAttrib", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglSwapBuffersWithDamageEXT", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglGetSyncAttribNV", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglGetStreamFileDescriptorKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglBindAPI", (__eglMustCastToProperFunctionPointerType)eglBindAPI},
+    {"eglReleaseThread", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglDestroySurface", (__eglMustCastToProperFunctionPointerType)eglDestroySurface},
+    {"eglDestroyImageKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglGetSyncAttribKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL},
+    {"eglExportDRMImageMESA", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglQueryNativeWindowNV", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglPostSubBufferNV", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL},
+    {"eglGetCurrentSurface", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglQueryStreamTimeKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglDestroySyncKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglInitialize", (__eglMustCastToProperFunctionPointerType)eglInitialize},
+    {"eglDestroyStreamKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglClientWaitSyncKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL},
+    {"eglTerminate", (__eglMustCastToProperFunctionPointerType)eglTerminate},
+    {"eglCreateSync64KHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL}, {"", NULL}, {"", NULL},
+    {"eglCreateImageKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL},
+    {"eglLockSurfaceKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL}, {"", NULL},
+    {"eglQuerySurface64KHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL},
+    {"eglQueryStreamu64KHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL},
+    {"eglGetCurrentDisplay", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL},
+    {"eglSetBlobCacheFuncsANDROID", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL},
+    {"eglQuerySurfacePointerANGLE", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglGetConfigAttrib", (__eglMustCastToProperFunctionPointerType)eglGetConfigAttrib},
+    {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL},
+    {"eglStreamAttribKHR", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL},
+    {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL}, {"", NULL},
+    {"eglSwapBuffersRegionNOK", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"eglSwapBuffersRegion2NOK", (__eglMustCastToProperFunctionPointerType)NULL},
+    {"", NULL},
+    {"eglDupNativeFenceFDANDROID", (__eglMustCastToProperFunctionPointerType)NULL}
+};
+
 static EGLProxyDisplay *displays = NULL;
 
 static EGLenum CurrentAPI = EGL_NONE; /*TODO: Should be in TLS */
@@ -106,188 +237,6 @@ if (((EGLProxyConfig*)(config) < ((EGLProxyDisplay*)(dpy))->configs) || \
 }while(0)
 
 #define UNUSED(x) (void)(x)
-
-#define MIN_WORD_LENGTH 9
-#define MAX_WORD_LENGTH 37
-#define MAX_HASH_VALUE 166
-
-static const __eglMustCastToProperFunctionPointerType functable[] = {
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL/*eglWaitGL*/,
-    NULL,
-    (__eglMustCastToProperFunctionPointerType)eglGetError,
-    NULL,
-    (__eglMustCastToProperFunctionPointerType)eglGetDisplay,
-    NULL, NULL, NULL, NULL,
-    NULL/*eglCreateSync*/,
-    (__eglMustCastToProperFunctionPointerType)eglMakeCurrent,
-    NULL/*eglSignalSyncNV*/,
-    NULL/*eglQueryAPI*/,
-    (__eglMustCastToProperFunctionPointerType)eglGetProcAddress,
-    NULL/*eglWaitNative*/,
-    NULL,
-    NULL/*eglGetCurrentContext*/,
-    NULL/*eglSignalSyncKHR*/,
-    (__eglMustCastToProperFunctionPointerType)eglCreateWindowSurface,
-    NULL,
-    (__eglMustCastToProperFunctionPointerType)eglQueryString,
-    NULL/*eglQueryContext*/,
-    NULL/*eglCreateSyncKHR*/,
-    NULL/*eglCreatePixmapSurface*/,
-    NULL/*eglGetSystemTimeNV*/,
-    NULL/*eglCreatePixmapSurfaceHI*/,
-    (__eglMustCastToProperFunctionPointerType)eglChooseConfig,
-    (__eglMustCastToProperFunctionPointerType)eglGetPlatformDisplay,
-    NULL/*eglGetSystemTimeFrequencyNV*/,
-    NULL/*eglCreateStreamProducerSurfaceKHR*/,
-    NULL/*eglGetPlatformDisplayEXT*/,
-    NULL/*eglCreatePlatformWindowSurface*/,
-    NULL/*eglCreateStreamFromFileDescriptorKHR*/,
-    NULL/*eglStreamConsumerGLTextureExternalKHR*/,
-    NULL/*eglCreatePlatformWindowSurfaceEXT*/,
-    NULL/*eglUnlockSurfaceKHR*/,
-    NULL/*eglCreatePlatformPixmapSurface*/,
-    (__eglMustCastToProperFunctionPointerType)eglCreateContext,
-    NULL/*eglCreatePbufferFromClientBuffer*/,
-    NULL/*eglCreatePlatformPixmapSurfaceEXT*/,
-    NULL/*eglDestroySync*/,
-    NULL/*eglFenceNV*/,
-    NULL/*eglWaitSync*/,
-    NULL/*eglClientWaitSync*/,
-    NULL/*eglCreateStreamKHR*/,
-    NULL/*eglWaitSyncKHR*/,
-    NULL,
-    NULL/*eglDestroySyncNV*/,
-    (__eglMustCastToProperFunctionPointerType)eglDestroyContext,
-    NULL/*eglReleaseTexImage*/,
-    NULL/*eglClientWaitSyncNV*/,
-    NULL/*eglCreateFenceSyncNV*/,
-    NULL,
-    NULL/*eglStreamConsumerReleaseKHR*/,
-    (__eglMustCastToProperFunctionPointerType)eglGetConfigs,
-    (__eglMustCastToProperFunctionPointerType)eglSwapBuffers,
-    NULL/*eglQuerySurface*/,
-    NULL/*eglCreateStreamSyncNV*/,
-    NULL/*eglQueryNativePixmapNV*/,
-    NULL/*eglQueryNativeDisplayNV*/,
-    NULL/*eglCopyBuffers*/,
-    NULL/*eglSwapInterval*/,
-    NULL/*eglCreateDRMImageMESA*/,
-    NULL/*eglStreamConsumerAcquireKHR*/,
-    NULL/*eglWaitClient*/,
-    NULL,
-    NULL/*eglBindTexImage*/,
-    NULL/*eglGetSyncAttrib*/,
-    NULL/*eglQueryStreamKHR*/,
-    NULL/*eglCreatePbufferSurface*/,
-    NULL, NULL,
-    NULL/*eglSurfaceAttrib*/,
-    NULL/*eglSwapBuffersWithDamageEXT*/,
-    NULL/*eglGetSyncAttribNV*/,
-    NULL/*eglGetStreamFileDescriptorKHR*/,
-    (__eglMustCastToProperFunctionPointerType)eglBindAPI,
-    NULL/*eglReleaseThread*/,
-    (__eglMustCastToProperFunctionPointerType)eglDestroySurface,
-    NULL/*eglDestroyImageKHR*/,
-    NULL/*eglGetSyncAttribKHR*/,
-    NULL,
-    NULL/*eglExportDRMImageMESA*/,
-    NULL/*eglQueryNativeWindowNV*/,
-    NULL/*eglPostSubBufferNV*/,
-    NULL,
-    NULL/*eglGetCurrentSurface*/,
-    NULL/*eglQueryStreamTimeKHR*/,
-    NULL/*eglDestroySyncKHR*/,
-    (__eglMustCastToProperFunctionPointerType)eglInitialize,
-    NULL/*eglDestroyStreamKHR*/,
-    NULL/*eglClientWaitSyncKHR*/,
-    NULL,
-    (__eglMustCastToProperFunctionPointerType)eglTerminate,
-    NULL/*eglCreateSync64KHR*/,
-    NULL, NULL, NULL,
-    NULL/*eglCreateImageKHR*/,
-    NULL, NULL, NULL, NULL,
-    NULL/*eglLockSurfaceKHR*/,
-    NULL, NULL,
-    NULL/*eglQuerySurface64KHR*/,
-    NULL, NULL, NULL, NULL,
-    NULL/*eglQueryStreamu64KHR*/,
-    NULL, NULL, NULL, NULL,
-    NULL/*eglGetCurrentDisplay*/,
-    NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL/*eglSetBlobCacheFuncsANDROID*/,
-    NULL, NULL, NULL, NULL,
-    NULL/*eglQuerySurfacePointerANGLE*/,
-    (__eglMustCastToProperFunctionPointerType)eglGetConfigAttrib,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL/*eglStreamAttribKHR*/,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL, NULL,
-    NULL/*eglSwapBuffersRegionNOK*/,
-    NULL/*eglSwapBuffersRegion2NOK*/,
-    NULL,
-    NULL/*eglDupNativeFenceFDANDROID*/
-};
-
-static unsigned int hash (const char *str, size_t len)
-{
-    static const unsigned char asso_values[] = {
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167,  50, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167,  40,  35,   5,   5,  25,
-        35,   0,  10,  40, 167,  45,  50,   5,   5, 167,
-        5,   5,  30,   0,  55,  15,   5,   0, 167, 167,
-        167, 167, 167, 167, 167, 167, 167,  35,  60,   0,
-        30,   5,  50,  10,   5,  60, 167, 167,  45,   0,
-        40,   0,   0, 167,   0, 167,  10,  40, 167,   0,
-        20,  30, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
-        167, 167, 167, 167, 167, 167
-    };
-    register size_t hval = len;
-
-    switch (hval) {
-        default:
-            hval += asso_values[ (unsigned char)str[17]];
-        /*FALLTHROUGH*/
-        case 17:
-        case 16:
-        case 15:
-            hval += asso_values[ (unsigned char)str[14]];
-        /*FALLTHROUGH*/
-        case 14:
-        case 13:
-        case 12:
-        case 11:
-        case 10:
-            hval += asso_values[ (unsigned char)str[9]];
-        /*FALLTHROUGH*/
-        case 9:
-        case 8:
-        case 7:
-        case 6:
-        case 5:
-        case 4:
-            hval += asso_values[ (unsigned char)str[3]];
-            break;
-    }
-    return (unsigned int) hval;
-}
 
 void eglSetError (EGLint error)
 {
@@ -1323,17 +1272,65 @@ EGLBoolean EGLAPIENTRY eglGetConfigs (EGLDisplay dpy, EGLConfig *configs,
     return EGL_TRUE;
 }
 
+static unsigned int hash (register const char *str, register unsigned int len)
+{
+    static const unsigned char asso_values[] = {
+        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
+        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
+        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
+        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
+        167, 167, 167, 167, 167, 167, 167, 167, 167, 167,
+        167, 167,  50, 167, 167, 167, 167, 167, 167, 167,
+        167, 167, 167, 167, 167,  40,  35,   5,   5,  25,
+        35,   0,  10,  40, 167,  45,  50,   5,   5, 167,
+        5,   5,  30,   0,  55,  15,   5,   0, 167, 167,
+        167, 167, 167, 167, 167, 167, 167,  35,  60,   0,
+        30,   5,  50,  10,   5,  60, 167, 167,  45,   0,
+        40,   0,   0, 167,   0, 167,  10,  40, 167,   0,
+        20,  30, 167, 167, 167, 167, 167, 167
+    };
+    register unsigned int hval = len;
+
+    switch (hval) {
+        default:
+            hval += asso_values[ (unsigned char)str[17]];
+        /*FALLTHROUGH*/
+        case 17:
+        case 16:
+        case 15:
+            hval += asso_values[ (unsigned char)str[14]];
+        /*FALLTHROUGH*/
+        case 14:
+        case 13:
+        case 12:
+        case 11:
+        case 10:
+            hval += asso_values[ (unsigned char)str[9]];
+        /*FALLTHROUGH*/
+        case 9:
+        case 8:
+        case 7:
+        case 6:
+        case 5:
+        case 4:
+            hval += asso_values[ (unsigned char)str[3]];
+            break;
+    }
+    return hval;
+}
+
 __eglMustCastToProperFunctionPointerType EGLAPIENTRY eglGetProcAddress (
     const char *procname)
 {
     size_t len = strlen (procname);
     if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH) {
-        register unsigned int key = hash (procname, len);
+        register unsigned int key = hash (procname, (unsigned int)len);
 
         if (key <= MAX_HASH_VALUE) {
-            register const __eglMustCastToProperFunctionPointerType s = functable[key];
-            if (s != NULL) {
-                return s;
+            register const char *s = lookup_table[key].name;
+
+            if (*procname == *s && !strcmp (procname + 1, s + 1)) {
+                return lookup_table[key].address;
             }
         }
     }
