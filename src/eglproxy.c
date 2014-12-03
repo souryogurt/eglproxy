@@ -517,7 +517,7 @@ EGLBoolean EGLAPIENTRY eglChooseConfig (EGLDisplay dpy,
     }
 
     if (fill_query (&query, attrib_list) == 0) {
-        eglSetError (EGL_BAD_PARAMETER);
+        eglSetError (EGL_BAD_ATTRIBUTE);
         return EGL_FALSE;
     }
     selected_configs = (EGLProxyConfigEntry *) calloc ((size_t)
