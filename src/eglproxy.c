@@ -147,20 +147,6 @@ static int config_comparator (const void *lvalue, const void *rvalue)
     } else if (lcfg->config->buffer_size < rcfg->config->buffer_size) {
         return -1;
     }
-
-    /* WARN: This rule is not present in EGL specification and added here
-     * because we can't specify single/double buffered surface in
-     * eglCreateWindowSurface call as requrired by specification. So
-     * implementation will just prefere doublebuffered configs like GLX do for
-     * window configs */
-    if ((lcfg->config->double_buffer == EGL_TRUE)
-            && (rcfg->config->double_buffer == EGL_FALSE)) {
-        return -1;
-    } else if ((lcfg->config->double_buffer == EGL_FALSE)
-               && (rcfg->config->double_buffer == EGL_TRUE)) {
-        return +1;
-    }
-
     if (lcfg->config->sample_buffers > rcfg->config->sample_buffers) {
         return +1;
     } else if (lcfg->config->sample_buffers < rcfg->config->sample_buffers) {
