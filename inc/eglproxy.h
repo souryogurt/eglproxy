@@ -14,40 +14,43 @@
 #endif /* _MSC_VER */
 
 typedef struct EGLProxyConfig {
-    void *platform;
     EGLint buffer_size;
-    EGLint red_size;
-    EGLint green_size;
-    EGLint blue_size;
-    EGLint luminance_size;
     EGLint alpha_size;
-    EGLint alpha_mask_size;
-    EGLBoolean bind_to_texture_rgb;
-    EGLBoolean bind_to_texture_rgba;
-    EGLBoolean double_buffer;
-    EGLint color_buffer_type;
+    EGLint blue_size;
+    EGLint green_size;
+    EGLint red_size;
+    EGLint depth_size;
+    EGLint stencil_size;
     EGLint config_caveat;
     EGLint config_id;
-    EGLint conformant;
-    EGLint depth_size;
     EGLint level;
-    EGLint max_pbuffer_width;
     EGLint max_pbuffer_height;
     EGLint max_pbuffer_pixels;
-    EGLint max_swap_interval;
-    EGLint min_swap_interval;
-    EGLBoolean native_renderable;
+    EGLint max_pbuffer_width;
+    EGLint native_renderable;
     EGLint native_visual_id;
     EGLint native_visual_type;
-    EGLint renderable_type;
-    EGLint sample_buffers;
+    EGLint reserved;
     EGLint samples;
-    EGLint stencil_size;
+    EGLint sample_buffers;
     EGLint surface_type;
     EGLint transparent_type;
-    EGLint transparent_red_value;
-    EGLint transparent_green_value;
     EGLint transparent_blue_value;
+    EGLint transparent_green_value;
+    EGLint transparent_red_value;
+    EGLint none;
+    EGLint bind_to_texture_rgb;
+    EGLint bind_to_texture_rgba;
+    EGLint min_swap_interval;
+    EGLint max_swap_interval;
+    EGLint luminance_size;
+    EGLint alpha_mask_size;
+    EGLint color_buffer_type;
+    EGLint renderable_type;
+    EGLint native_pixmap;
+    EGLint conformant;
+    EGLint match_format_khr;
+    void *platform;
 } EGLProxyConfig;
 
 typedef struct ContextAttributes {

@@ -8,76 +8,44 @@ typedef struct EGLProxyConfigEntry {
     EGLint n_colorbits;
 } EGLProxyConfigEntry;
 
-typedef struct EGLConfigQuery {
-    EGLint buffer_size;
-    EGLint red_size;
-    EGLint green_size;
-    EGLint blue_size;
-    EGLint luminance_size;
-    EGLint alpha_size;
-    EGLint alpha_mask_size;
-    EGLint bind_to_texture_rgb;
-    EGLint bind_to_texture_rgba;
-    EGLint color_buffer_type;
-    EGLint config_caveat;
-    EGLint config_id;
-    EGLint conformant;
-    EGLint depth_size;
-    EGLint level;
-    EGLint match_native_pixmap;
-    EGLint max_swap_interval;
-    EGLint min_swap_interval;
-    EGLint native_renderable;
-    EGLint native_visual_type;
-    EGLint renderable_type;
-    EGLint sample_buffers;
-    EGLint samples;
-    EGLint stencil_size;
-    EGLint surface_type;
-    EGLint transparent_type;
-    EGLint transparent_red_value;
-    EGLint transparent_green_value;
-    EGLint transparent_blue_value;
-    EGLint native_visual_id;
-    EGLint max_pbuffer_width;
-    EGLint max_pbuffer_height;
-    EGLint max_pbuffer_pixels;
-} EGLConfigQuery;
-
-static const EGLConfigQuery default_query = {
+static const EGLProxyConfig default_query = {
     0, /* EGL_BUFFER_SIZE */
-    0, /* EGL_RED_SIZE */
-    0, /* EGL_GREEN_SIZE */
-    0, /* EGL_BLUE_SIZE */
-    0, /* EGL_LUMINANCE_SIZE */
     0, /* EGL_ALPHA_SIZE */
-    0, /* EGL_ALPHA_MASK_SIZE */
-    EGL_DONT_CARE, /* EGL_BIND_TO_TEXTURE_RGB */
-    EGL_DONT_CARE, /* EGL_BIND_TO_TEXTURE_RGBA */
-    EGL_RGB_BUFFER, /* EGL_COLOR_BUFFER_TYPE */
+    0, /* EGL_BLUE_SIZE */
+    0, /* EGL_GREEN_SIZE */
+    0, /* EGL_RED_SIZE */
+    0, /* EGL_DEPTH_SIZE */
+    0, /* EGL_STENCIL_SIZE */
     EGL_DONT_CARE, /* EGL_CONFIG_CAVEAT */
     EGL_DONT_CARE, /* EGL_CONFIG_ID */
-    0, /* EGL_CONFORMANT */
-    0, /* EGL_DEPTH_SIZE */
     0, /* EGL_LEVEL */
-    EGL_NONE, /* EGL_MATCH_NATIVE_PIXMAP */
-    EGL_DONT_CARE, /* EGL_MAX_SWAP_INTERVAL */
-    EGL_DONT_CARE, /* EGL_MIN_SWAP_INTERVAL */
+    EGL_DONT_CARE, /* EGL_MAX_PBUFFER_HEIGHT */
+    EGL_DONT_CARE, /* EGL_MAX_PBUFFER_PIXELS */
+    EGL_DONT_CARE, /* EGL_MAX_PBUFFER_WIDTH */
     EGL_DONT_CARE, /* EGL_NATIVE_RENDERABLE */
+    EGL_DONT_CARE, /* EGL_NATIVE_VISUAL_ID */
     EGL_DONT_CARE, /* EGL_NATIVE_VISUAL_TYPE */
-    EGL_OPENGL_ES_BIT, /* EGL_RENDERABLE_TYPE */
-    0, /* EGL_SAMPLE_BUFFERS */
+    0, /* RESERVED */
     0, /* EGL_SAMPLES */
-    0, /* EGL_STENCIL_SIZE */
+    0, /* EGL_SAMPLE_BUFFERS */
     EGL_WINDOW_BIT, /* EGL_SURFACE_TYPE */
     EGL_NONE, /* EGL_TRANSPARENT_TYPE */
-    EGL_DONT_CARE, /* EGL_TRANSPARENT_RED_VALUE */
-    EGL_DONT_CARE, /* EGL_TRANSPARENT_GREEN_VALUE */
     EGL_DONT_CARE, /* EGL_TRANSPARENT_BLUE_VALUE */
-    EGL_DONT_CARE, /* EGL_NATIVE_VISUAL_ID */
-    EGL_DONT_CARE, /* EGL_MAX_PBUFFER_WIDTH */
-    EGL_DONT_CARE, /* EGL_MAX_PBUFFER_HEIGHT */
-    EGL_DONT_CARE /* EGL_MAX_PBUFFER_PIXELS */
+    EGL_DONT_CARE, /* EGL_TRANSPARENT_GREEN_VALUE */
+    EGL_DONT_CARE, /* EGL_TRANSPARENT_RED_VALUE */
+    0, /* EGL_NONE */
+    EGL_DONT_CARE, /* EGL_BIND_TO_TEXTURE_RGB */
+    EGL_DONT_CARE, /* EGL_BIND_TO_TEXTURE_RGBA */
+    EGL_DONT_CARE, /* EGL_MIN_SWAP_INTERVAL */
+    EGL_DONT_CARE, /* EGL_MAX_SWAP_INTERVAL */
+    0, /* EGL_LUMINANCE_SIZE */
+    0, /* EGL_ALPHA_MASK_SIZE */
+    EGL_RGB_BUFFER, /* EGL_COLOR_BUFFER_TYPE */
+    EGL_OPENGL_ES_BIT, /* EGL_RENDERABLE_TYPE */
+    EGL_NONE, /* EGL_MATCH_NATIVE_PIXMAP */
+    0, /* EGL_CONFORMANT */
+    0, /* EGL_MATCH_FORMAT_KHR */
+    NULL /* platform */
 };
 
 static const ContextAttributes default_context_attributes = {
@@ -188,7 +156,7 @@ static int config_comparator (const void *lvalue, const void *rvalue)
 
 static EGLint select_config (EGLProxyDisplay *egl_display,
                              EGLProxyConfigEntry *selected,
-                             const EGLConfigQuery *query)
+                             const EGLProxyConfig *query)
 {
     EGLint n_selected = 0;
     EGLint i;
@@ -237,13 +205,11 @@ static EGLint select_config (EGLProxyDisplay *egl_display,
 
         }
         if ((query->bind_to_texture_rgb != EGL_DONT_CARE)
-                && (cfg->bind_to_texture_rgb != (EGLBoolean)
-                    query->bind_to_texture_rgb)) {
+                && (cfg->bind_to_texture_rgb != query->bind_to_texture_rgb)) {
             continue;
         }
         if ((query->bind_to_texture_rgba != EGL_DONT_CARE)
-                && (cfg->bind_to_texture_rgba != (EGLBoolean)
-                    query->bind_to_texture_rgba)) {
+                && (cfg->bind_to_texture_rgba != query->bind_to_texture_rgba)) {
             continue;
         }
         if ((query->color_buffer_type != EGL_DONT_CARE)
@@ -278,7 +244,7 @@ static EGLint select_config (EGLProxyDisplay *egl_display,
             continue;
         }
         if ((query->native_renderable != EGL_DONT_CARE)
-                && (cfg->native_renderable != (EGLBoolean)query->native_renderable)) {
+                && (cfg->native_renderable != query->native_renderable)) {
             continue;
         }
         if ((query->renderable_type != EGL_DONT_CARE)
@@ -354,126 +320,27 @@ static EGLint select_config (EGLProxyDisplay *egl_display,
     return n_selected;
 }
 
-static int  fill_query (EGLConfigQuery *query, const EGLint *attrib_list)
+static EGLBoolean fill_query (EGLProxyConfig *query, const EGLint *attrib_list)
 {
     size_t i = 0;
     if (attrib_list == NULL) {
-        return 1;
+        return EGL_TRUE;
     }
-
     for (i = 0; attrib_list[i] != EGL_NONE; i += 2) {
+        EGLint attribute = attrib_list[i];
         EGLint value = attrib_list[i + 1];
-        switch (attrib_list[i]) {
-            case EGL_BUFFER_SIZE:
-                query->buffer_size = value;
-                break;
-            case EGL_RED_SIZE:
-                query->red_size = value;
-                break;
-            case EGL_GREEN_SIZE:
-                query->green_size = value;
-                break;
-            case EGL_BLUE_SIZE:
-                query->blue_size = value;
-                break;
-            case EGL_LUMINANCE_SIZE:
-                query->luminance_size = value;
-                break;
-            case EGL_ALPHA_SIZE:
-                query->alpha_size = value;
-                break;
-            case EGL_ALPHA_MASK_SIZE:
-                query->alpha_mask_size = value;
-                break;
-            case EGL_BIND_TO_TEXTURE_RGB:
-                query->bind_to_texture_rgb = value;
-                break;
-            case EGL_BIND_TO_TEXTURE_RGBA:
-                query->bind_to_texture_rgba = value;
-                break;
-            case EGL_COLOR_BUFFER_TYPE:
-                query->color_buffer_type = value;
-                break;
-            case EGL_CONFIG_CAVEAT:
-                query->config_caveat = value;
-                break;
-            case EGL_CONFIG_ID:
-                query->config_id = value;
-                break;
-            case EGL_CONFORMANT:
-                query->conformant = value;
-                break;
-            case EGL_DEPTH_SIZE:
-                query->depth_size = value;
-                break;
-            case EGL_LEVEL:
-                if (value == EGL_DONT_CARE) {
-                    return 0;
-                }
-                query->level = value;
-                break;
-            case EGL_MATCH_NATIVE_PIXMAP:
-                if (value == EGL_DONT_CARE) {
-                    return 0;
-                }
-                query->match_native_pixmap = value;
-                break;
-            case EGL_MAX_SWAP_INTERVAL:
-                query->max_swap_interval = value;
-                break;
-            case EGL_MIN_SWAP_INTERVAL:
-                query->min_swap_interval = value;
-                break;
-            case EGL_NATIVE_RENDERABLE:
-                query->native_renderable = value;
-                break;
-            case EGL_NATIVE_VISUAL_TYPE:
-                query->native_visual_type = value;
-                break;
-            case EGL_RENDERABLE_TYPE:
-                query->renderable_type = value;
-                break;
-            case EGL_SAMPLE_BUFFERS:
-                query->sample_buffers = value;
-                break;
-            case EGL_SAMPLES:
-                query->samples = value;
-                break;
-            case EGL_STENCIL_SIZE:
-                query->stencil_size = value;
-                break;
-            case EGL_SURFACE_TYPE:
-                query->surface_type = value;
-                break;
-            case EGL_TRANSPARENT_TYPE:
-                query->transparent_type = value;
-                break;
-            case EGL_TRANSPARENT_RED_VALUE:
-                query->transparent_red_value = value;
-                break;
-            case EGL_TRANSPARENT_GREEN_VALUE:
-                query->transparent_green_value = value;
-                break;
-            case EGL_TRANSPARENT_BLUE_VALUE:
-                query->transparent_blue_value = value;
-                break;
-            case EGL_NATIVE_VISUAL_ID:
-                query->native_visual_id = value;
-                break;
-            case EGL_MAX_PBUFFER_WIDTH:
-                query->max_pbuffer_width = value;
-                break;
-            case EGL_MAX_PBUFFER_HEIGHT:
-                query->max_pbuffer_height = value;
-                break;
-            case EGL_MAX_PBUFFER_PIXELS:
-                query->max_pbuffer_pixels = value;
-                break;
-            default:
-                return 0;
+        if ((attribute >= EGL_BUFFER_SIZE) && (attribute <= EGL_MATCH_FORMAT_KHR)
+                && (attribute != 0x3030)) {
+            if (((attribute == EGL_LEVEL) || (attribute == EGL_MATCH_NATIVE_PIXMAP))
+                    && value == EGL_DONT_CARE) {
+                return EGL_FALSE;
+            }
+            ((EGLint *)query)[attribute - EGL_BUFFER_SIZE] = value;
+        } else {
+            return EGL_FALSE;
         }
     }
-    return 1;
+    return EGL_TRUE;
 }
 
 EGLBoolean EGLAPIENTRY eglChooseConfig (EGLDisplay dpy,
@@ -481,7 +348,7 @@ EGLBoolean EGLAPIENTRY eglChooseConfig (EGLDisplay dpy,
                                         EGLConfig *configs, EGLint config_size,
                                         EGLint *num_config)
 {
-    EGLConfigQuery query = default_query;
+    EGLProxyConfig query = default_query;
     EGLProxyConfigEntry *selected_configs = NULL;
     EGLint n_selected_configs = 0;
     EGLint i = 0;
@@ -502,7 +369,7 @@ EGLBoolean EGLAPIENTRY eglChooseConfig (EGLDisplay dpy,
         return EGL_FALSE;
     }
 
-    if (fill_query (&query, attrib_list) == 0) {
+    if (fill_query (&query, attrib_list) == EGL_FALSE) {
         eglSetError (EGL_BAD_ATTRIBUTE);
         return EGL_FALSE;
     }
@@ -784,109 +651,15 @@ EGLBoolean EGLAPIENTRY eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config,
         eglSetError (EGL_BAD_PARAMETER);
         return EGL_FALSE;
     }
-    switch (attribute) {
-        case EGL_BUFFER_SIZE:
-            *value = egl_config->buffer_size;
-            break;
-        case EGL_RED_SIZE:
-            *value = egl_config->red_size;
-            break;
-        case EGL_GREEN_SIZE:
-            *value = egl_config->green_size;
-            break;
-        case EGL_BLUE_SIZE:
-            *value = egl_config->blue_size;
-            break;
-        case EGL_LUMINANCE_SIZE:
-            *value = egl_config->luminance_size;
-            break;
-        case EGL_ALPHA_SIZE:
-            *value = egl_config->alpha_size;
-            break;
-        case EGL_ALPHA_MASK_SIZE:
-            *value = egl_config->alpha_mask_size;
-            break;
-        case EGL_BIND_TO_TEXTURE_RGB:
-            * ((EGLBoolean *)value) = egl_config->bind_to_texture_rgb;
-            break;
-        case EGL_BIND_TO_TEXTURE_RGBA:
-            * ((EGLBoolean *)value) = egl_config->bind_to_texture_rgba;
-            break;
-        case EGL_COLOR_BUFFER_TYPE:
-            *value = egl_config->color_buffer_type;
-            break;
-        case EGL_CONFIG_CAVEAT:
-            *value = egl_config->config_caveat;
-            break;
-        case EGL_CONFIG_ID:
-            *value = egl_config->config_id;
-            break;
-        case EGL_CONFORMANT:
-            *value = egl_config->conformant;
-            break;
-        case EGL_DEPTH_SIZE:
-            *value = egl_config->depth_size;
-            break;
-        case EGL_LEVEL:
-            *value = egl_config->level;
-            break;
-        case EGL_MAX_PBUFFER_WIDTH:
-            *value = egl_config->max_pbuffer_width;
-            break;
-        case EGL_MAX_PBUFFER_HEIGHT:
-            *value = egl_config->max_pbuffer_height;
-            break;
-        case EGL_MAX_PBUFFER_PIXELS:
-            *value = egl_config->max_pbuffer_pixels;
-            break;
-        case EGL_MAX_SWAP_INTERVAL:
-            *value = egl_config->max_swap_interval;
-            break;
-        case EGL_MIN_SWAP_INTERVAL:
-            *value = egl_config->min_swap_interval;
-            break;
-        case EGL_NATIVE_RENDERABLE:
-            * ((EGLBoolean *)value) = egl_config->native_renderable;
-            break;
-        case EGL_NATIVE_VISUAL_ID:
-            *value = egl_config->native_visual_id;
-            break;
-        case EGL_NATIVE_VISUAL_TYPE:
-            *value = egl_config->native_visual_type;
-            break;
-        case EGL_RENDERABLE_TYPE:
-            *value = egl_config->renderable_type;
-            break;
-        case EGL_SAMPLE_BUFFERS:
-            *value = egl_config->sample_buffers;
-            break;
-        case EGL_SAMPLES:
-            *value = egl_config->samples;
-            break;
-        case EGL_STENCIL_SIZE:
-            *value = egl_config->stencil_size;
-            break;
-        case EGL_SURFACE_TYPE:
-            *value = egl_config->surface_type;
-            break;
-        case EGL_TRANSPARENT_TYPE:
-            *value = egl_config->transparent_type;
-            break;
-        case EGL_TRANSPARENT_RED_VALUE:
-            *value = egl_config->transparent_red_value;
-            break;
-        case EGL_TRANSPARENT_GREEN_VALUE:
-            *value = egl_config->transparent_green_value;
-            break;
-        case EGL_TRANSPARENT_BLUE_VALUE:
-            *value = egl_config->transparent_blue_value;
-            break;
-        default:
-            eglSetError (EGL_BAD_ATTRIBUTE);
-            return EGL_FALSE;
+    if ((attribute >= EGL_BUFFER_SIZE) && (attribute <= EGL_MATCH_FORMAT_KHR)
+            && (attribute != EGL_NONE) && (attribute != 0x3030)
+            && (attribute != EGL_MATCH_NATIVE_PIXMAP)) {
+        *value = ((EGLint *)egl_config)[attribute - EGL_BUFFER_SIZE];
+        eglSetError (EGL_SUCCESS);
+        return EGL_TRUE;
     }
-    eglSetError (EGL_SUCCESS);
-    return EGL_TRUE;
+    eglSetError (EGL_BAD_ATTRIBUTE);
+    return EGL_FALSE;
 }
 
 EGLDisplay EGLAPIENTRY eglGetPlatformDisplay (EGLenum platform,
