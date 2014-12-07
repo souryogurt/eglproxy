@@ -501,6 +501,13 @@ EGLContext EGLAPIENTRY eglCreateContext (EGLDisplay dpy, EGLConfig config,
     return EGL_NO_CONTEXT;
 }
 
+EGLSurface EGLAPIENTRY eglCreatePlatformWindowSurface (EGLDisplay dpy,
+        EGLConfig config, void *native_window, const EGLAttrib *attrib_list)
+{
+    return eglCreateWindowSurface (dpy, config, (EGLNativeWindowType)native_window,
+                                   (const EGLint *)attrib_list);
+}
+
 EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config,
         EGLNativeWindowType win,
         const EGLint *attrib_list)
@@ -527,9 +534,6 @@ EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config,
     }
     UNUSED (attrib_list);
     /* TODO: parse attribute list */
-    /* TODO: If the pixel format of native native window does not correspond to
-     * the format, type, and size of the color buffers required by config, then
-     * EGL_BAD_MATCH error is generated */
     /* TODO: if native_window is not a valid native window handle, then an
      * EGL_BAD_NATIVE_WINDOW error should be generated. */
     for (egl_surface = egl_display->surfaces; egl_surface != NULL;
@@ -538,6 +542,10 @@ EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config,
             eglSetError (EGL_BAD_ALLOC);
             return EGL_NO_SURFACE;
         }
+    }
+    if (!window_is_match_config (egl_display->platform, win, egl_config)) {
+        eglSetError (EGL_BAD_MATCH);
+        return EGL_NO_SURFACE;
     }
     egl_surface = (EGLProxySurface *) malloc (sizeof (EGLProxySurface));
     if (egl_surface != NULL) {

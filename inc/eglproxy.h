@@ -125,6 +125,8 @@ int platform_display_has_attributes (const EGLProxyDisplay *display,
                                      const PlatformDisplayAttributes *attributes);
 __eglMustCastToProperFunctionPointerType platform_get_proc_address (
     const char *procname);
+int window_is_match_config (PlatformDisplay *display, EGLNativeWindowType win,
+                            EGLProxyConfig *config);
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }

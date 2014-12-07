@@ -88,6 +88,15 @@ void platform_context_destroy (PlatformDisplay *display, void *context)
     glXDestroyContext (display->x11_display, (GLXContext)context);
 }
 
+int window_is_match_config (PlatformDisplay *display, EGLNativeWindowType win,
+                            EGLProxyConfig *config)
+{
+    XWindowAttributes attributes;
+    XGetWindowAttributes (display->x11_display, win, &attributes);
+    return XVisualIDFromVisual (attributes.visual) == (VisualID)
+           config->native_visual_id;
+}
+
 void *platform_window_surface_create (PlatformDisplay *display,
                                       EGLProxyConfig *egl_config,
                                       EGLNativeWindowType win)
