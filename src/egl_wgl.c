@@ -202,7 +202,8 @@ void platform_context_destroy (PlatformDisplay *display, void *context)
     free (wgl_context);
 }
 
-int window_is_match_config (PlatformDisplay *display, EGLNativeWindowType win, EGLProxyConfig *config)
+int window_is_match_config (PlatformDisplay *display, EGLNativeWindowType win,
+                            EGLProxyConfig *config)
 {
     HDC hDC = GetDC (win);
     if (GetPixelFormat (hDC) != egl_config->native_visual_id) {

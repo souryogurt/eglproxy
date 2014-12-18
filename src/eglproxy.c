@@ -67,7 +67,7 @@ static EGLint last_error = EGL_SUCCESS; /*TODO: Should be in TLS */
 #define CHECK_EGLCONFIG(dpy, config) { \
 if (((EGLProxyConfig*)(config) < ((EGLProxyDisplay*)(dpy))->configs) || \
     ((EGLProxyConfig*)(config) >= &((EGLProxyDisplay*)(dpy))->configs[((EGLProxyDisplay*)(dpy))->n_configs])){ \
-    eglSetError (EGL_BAD_PARAMETER); \
+    eglSetError (EGL_BAD_CONFIG); \
     return EGL_FALSE; \
 } \
 }while(0)
