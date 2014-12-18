@@ -534,8 +534,10 @@ EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config,
     }
     UNUSED (attrib_list);
     /* TODO: parse attribute list */
-    /* TODO: if native_window is not a valid native window handle, then an
-     * EGL_BAD_NATIVE_WINDOW error should be generated. */
+    if (window_is_valid (egl_display->platform, win) == EGL_FALSE) {
+        eglSetError (EGL_BAD_NATIVE_WINDOW);
+        return EGL_NO_SURFACE;
+    }
     for (egl_surface = egl_display->surfaces; egl_surface != NULL;
             egl_surface = egl_surface->next) {
         if (egl_surface->window == win) {

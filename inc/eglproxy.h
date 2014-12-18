@@ -127,6 +127,7 @@ __eglMustCastToProperFunctionPointerType platform_get_proc_address (
     const char *procname);
 int window_is_match_config (PlatformDisplay *display, EGLNativeWindowType win,
                             EGLProxyConfig *config);
+EGLBoolean window_is_valid (PlatformDisplay *display, EGLNativeWindowType win);
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }

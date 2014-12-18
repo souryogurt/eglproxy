@@ -656,3 +656,8 @@ __eglMustCastToProperFunctionPointerType platform_get_proc_address (
     return (__eglMustCastToProperFunctionPointerType)wglGetProcAddress ((
                 LPCSTR)procname);
 }
+
+EGLBoolean window_is_valid (PlatformDisplay *display, EGLNativeWindowType win)
+{
+    return (EGLBoolean)IsWindow (win);
+}

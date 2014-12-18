@@ -605,3 +605,9 @@ __eglMustCastToProperFunctionPointerType platform_get_proc_address (
     return (__eglMustCastToProperFunctionPointerType)glXGetProcAddressARB ((
                 const GLubyte *)procname);
 }
+
+EGLBoolean window_is_valid (PlatformDisplay *display, EGLNativeWindowType win)
+{
+    /* TODO: Write more better check */
+    return win != 0;
+}
