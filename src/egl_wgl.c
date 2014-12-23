@@ -659,5 +659,6 @@ __eglMustCastToProperFunctionPointerType platform_get_proc_address (
 
 EGLBoolean window_is_valid (PlatformDisplay *display, EGLNativeWindowType win)
 {
+    UNUSED (display);
     return (EGLBoolean)IsWindow (win);
 }

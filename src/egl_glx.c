@@ -22,6 +22,8 @@ typedef GLXContext ( *PFNGLXCREATECONTEXTATTRIBSARBPROC) (Display *dpy,
         const int *attrib_list);
 #endif /* GLX_ARB_create_context */
 
+#define UNUSED(x) (void)(x)
+
 struct PlatformDisplay {
     PFNGLXCREATECONTEXTATTRIBSARBPROC glXCreateContextAttribsARB;
     Display *x11_display; /**< Connection to X11 display */
@@ -608,6 +610,7 @@ __eglMustCastToProperFunctionPointerType platform_get_proc_address (
 
 EGLBoolean window_is_valid (PlatformDisplay *display, EGLNativeWindowType win)
 {
+    UNUSED (display);
     /* TODO: Write more better check */
     return win != 0;
 }
