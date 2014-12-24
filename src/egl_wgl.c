@@ -206,7 +206,7 @@ int window_is_match_config (PlatformDisplay *display, EGLNativeWindowType win,
                             EGLProxyConfig *config)
 {
     HDC hDC = GetDC (win);
-    if (GetPixelFormat (hDC) != egl_config->native_visual_id) {
+    if (GetPixelFormat (hDC) != config->native_visual_id) {
         ReleaseDC (win, hDC);
         return 0;
     }
