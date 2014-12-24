@@ -25,5 +25,5 @@ elseif(WIN32)
 endif(UNIX)
 
 include_directories(${EGLPROXY_INCLUDE_DIRS})
-add_library(${PROJECT_NAME} STATIC ${EGLPROXY_SOURCES} ${EGLPROXY_HEADERS})
+add_library(${PROJECT_NAME} ${EGLPROXY_SOURCES} ${EGLPROXY_HEADERS})
 target_link_libraries(${PROJECT_NAME} ${EGLPROXY_LIBRARIES})
