@@ -121,7 +121,7 @@ typedef struct WGLOpenGLContext {
     HGLRC glrc;
 } WGLOpenGLContext;
 
-static const LPCWSTR FakeClass = _T ("MyFakeOpenGLWindowClass");
+static const LPCTSTR FakeClass = _T ("MyFakeOpenGLWindowClass");
 
 #define UNUSED(x) (void)(x)
 
