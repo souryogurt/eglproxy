@@ -1,8 +1,5 @@
 # EGLPROXY #
-This is library that expose GLX functionality through EGL interface
-
-To build it type:
-`make`
+This is library that expose GLX/WGL functionality through EGL interface.
 
 ### Who do I talk to? ###
 Any questions can be asked using my mail egor.artemov@gmail.com
