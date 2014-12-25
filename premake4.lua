@@ -1,4 +1,6 @@
-solution "eglproxy"
+if solution() == nil then
+	solution "eglproxy"
+end
 	configurations { "Debug", "Release" }
 	project "eglproxy"
 		kind "SharedLib"
