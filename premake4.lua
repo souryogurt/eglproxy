@@ -16,7 +16,7 @@ end
 
         if os.is("windows") then
             files { "src/egl_wgl.c"}
-            links { "OpenGL32" }
+            links { "OpenGL32" , "Gdi32"}
         elseif os.is("linux") or os.is("bsd") then
             files { "src/egl_glx.c"}
             links { "GL" }
