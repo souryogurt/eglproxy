@@ -79,7 +79,7 @@ void eglSetError (EGLint error)
     last_error = error;
 }
 
-EGLBoolean EGLAPIENTRY eglBindAPI (EGLenum api)
+EGLAPI EGLBoolean EGLAPIENTRY eglBindAPI (EGLenum api)
 {
     if (api == EGL_OPENGL_API) {
         /* TODO: set API for current THREAD */
@@ -343,10 +343,10 @@ static EGLBoolean fill_query (EGLProxyConfig *query, const EGLint *attrib_list)
     return EGL_TRUE;
 }
 
-EGLBoolean EGLAPIENTRY eglChooseConfig (EGLDisplay dpy,
-                                        const EGLint *attrib_list,
-                                        EGLConfig *configs, EGLint config_size,
-                                        EGLint *num_config)
+EGLAPI EGLBoolean EGLAPIENTRY eglChooseConfig (EGLDisplay dpy,
+        const EGLint *attrib_list,
+        EGLConfig *configs, EGLint config_size,
+        EGLint *num_config)
 {
     EGLProxyConfig query = default_query;
     EGLProxyConfigEntry *selected_configs = NULL;
@@ -442,7 +442,8 @@ static int parse_context_attributes (ContextAttributes *attributes,
     return 1;
 }
 
-EGLContext EGLAPIENTRY eglCreateContext (EGLDisplay dpy, EGLConfig config,
+EGLAPI EGLContext EGLAPIENTRY eglCreateContext (EGLDisplay dpy,
+        EGLConfig config,
         EGLContext share_context,
         const EGLint *attrib_list)
 {
@@ -501,14 +502,15 @@ EGLContext EGLAPIENTRY eglCreateContext (EGLDisplay dpy, EGLConfig config,
     return EGL_NO_CONTEXT;
 }
 
-EGLSurface EGLAPIENTRY eglCreatePlatformWindowSurface (EGLDisplay dpy,
+EGLAPI EGLSurface EGLAPIENTRY eglCreatePlatformWindowSurface (EGLDisplay dpy,
         EGLConfig config, void *native_window, const EGLAttrib *attrib_list)
 {
     return eglCreateWindowSurface (dpy, config, (EGLNativeWindowType)native_window,
                                    (const EGLint *)attrib_list);
 }
 
-EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config,
+EGLAPI EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy,
+        EGLConfig config,
         EGLNativeWindowType win,
         const EGLint *attrib_list)
 {
@@ -566,7 +568,7 @@ EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy, EGLConfig config,
     return EGL_NO_SURFACE;
 }
 
-EGLBoolean EGLAPIENTRY eglDestroyContext (EGLDisplay dpy, EGLContext ctx)
+EGLAPI EGLBoolean EGLAPIENTRY eglDestroyContext (EGLDisplay dpy, EGLContext ctx)
 {
     EGLProxyContext *item = NULL;
     EGLProxyContext *prev_item = NULL;
@@ -602,7 +604,8 @@ EGLBoolean EGLAPIENTRY eglDestroyContext (EGLDisplay dpy, EGLContext ctx)
     return EGL_FALSE;
 }
 
-EGLBoolean EGLAPIENTRY eglDestroySurface (EGLDisplay dpy, EGLSurface surface)
+EGLAPI EGLBoolean EGLAPIENTRY eglDestroySurface (EGLDisplay dpy,
+        EGLSurface surface)
 {
     EGLProxySurface *item = NULL;
     EGLProxySurface *prev_item = NULL;
@@ -638,7 +641,8 @@ EGLBoolean EGLAPIENTRY eglDestroySurface (EGLDisplay dpy, EGLSurface surface)
     return EGL_FALSE;
 }
 
-EGLBoolean EGLAPIENTRY eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config,
+EGLAPI EGLBoolean EGLAPIENTRY eglGetConfigAttrib (EGLDisplay dpy,
+        EGLConfig config,
         EGLint attribute, EGLint *value)
 {
     EGLProxyConfig *egl_config = NULL;
@@ -672,7 +676,7 @@ EGLBoolean EGLAPIENTRY eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config,
     return EGL_FALSE;
 }
 
-EGLDisplay EGLAPIENTRY eglGetPlatformDisplay (EGLenum platform,
+EGLAPI EGLDisplay EGLAPIENTRY eglGetPlatformDisplay (EGLenum platform,
         void *native_display, const EGLAttrib *attrib_list)
 {
     EGLProxyDisplay *display = displays;
@@ -703,13 +707,13 @@ EGLDisplay EGLAPIENTRY eglGetPlatformDisplay (EGLenum platform,
     return EGL_NO_DISPLAY;
 }
 
-EGLDisplay EGLAPIENTRY eglGetDisplay (EGLNativeDisplayType display_id)
+EGLAPI EGLDisplay EGLAPIENTRY eglGetDisplay (EGLNativeDisplayType display_id)
 {
     return eglGetPlatformDisplay (EGL_PLATFORM_X11_KHR, display_id, NULL);
 }
 
-EGLBoolean EGLAPIENTRY eglInitialize (EGLDisplay dpy, EGLint *major,
-                                      EGLint *minor)
+EGLAPI EGLBoolean EGLAPIENTRY eglInitialize (EGLDisplay dpy, EGLint *major,
+        EGLint *minor)
 {
     EGLProxyDisplay *egl_display = displays;
     while ((egl_display != NULL) && (egl_display != dpy)) {
@@ -746,8 +750,8 @@ EGLBoolean EGLAPIENTRY eglInitialize (EGLDisplay dpy, EGLint *major,
     return EGL_FALSE;
 }
 
-EGLBoolean EGLAPIENTRY eglMakeCurrent (EGLDisplay dpy, EGLSurface draw,
-                                       EGLSurface read, EGLContext ctx)
+EGLAPI EGLBoolean EGLAPIENTRY eglMakeCurrent (EGLDisplay dpy, EGLSurface draw,
+        EGLSurface read, EGLContext ctx)
 {
     EGLProxySurface *egl_draw = (EGLProxySurface *) draw;
     EGLProxySurface *egl_read = (EGLProxySurface *) read;
@@ -783,7 +787,7 @@ EGLBoolean EGLAPIENTRY eglMakeCurrent (EGLDisplay dpy, EGLSurface draw,
                                   egl_context);
 }
 
-const char *EGLAPIENTRY eglQueryString (EGLDisplay dpy, EGLint name)
+EGLAPI const char *EGLAPIENTRY eglQueryString (EGLDisplay dpy, EGLint name)
 {
     EGLProxyDisplay *egl_display = displays;
     if (dpy != EGL_NO_DISPLAY) {
@@ -821,7 +825,8 @@ const char *EGLAPIENTRY eglQueryString (EGLDisplay dpy, EGLint name)
     return NULL;
 }
 
-EGLBoolean EGLAPIENTRY eglSwapBuffers (EGLDisplay dpy, EGLSurface surface)
+EGLAPI EGLBoolean EGLAPIENTRY eglSwapBuffers (EGLDisplay dpy,
+        EGLSurface surface)
 {
     EGLProxySurface *egl_surface = (EGLProxySurface *) surface;
     EGLProxyDisplay *egl_display = displays;
@@ -839,7 +844,7 @@ EGLBoolean EGLAPIENTRY eglSwapBuffers (EGLDisplay dpy, EGLSurface surface)
     return platform_swap_buffers (egl_display->platform, egl_surface);
 }
 
-EGLBoolean EGLAPIENTRY eglTerminate (EGLDisplay dpy)
+EGLAPI EGLBoolean EGLAPIENTRY eglTerminate (EGLDisplay dpy)
 {
     EGLProxyDisplay *egl_display = displays;
     while ((egl_display != NULL) && (egl_display != dpy)) {
@@ -872,13 +877,13 @@ EGLBoolean EGLAPIENTRY eglTerminate (EGLDisplay dpy)
     return EGL_TRUE;
 }
 
-EGLint EGLAPIENTRY eglGetError (void)
+EGLAPI EGLint EGLAPIENTRY eglGetError (void)
 {
     return last_error;
 }
 
-EGLBoolean EGLAPIENTRY eglGetConfigs (EGLDisplay dpy, EGLConfig *configs,
-                                      EGLint config_size, EGLint *num_config)
+EGLAPI EGLBoolean EGLAPIENTRY eglGetConfigs (EGLDisplay dpy, EGLConfig *configs,
+        EGLint config_size, EGLint *num_config)
 {
     EGLProxyDisplay *egl_display = displays;
     while ((egl_display != NULL) && (egl_display != dpy)) {

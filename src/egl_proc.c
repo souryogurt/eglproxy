@@ -179,7 +179,7 @@ static unsigned int hash (register const char *str, register unsigned int len)
     return hval;
 }
 
-__eglMustCastToProperFunctionPointerType EGLAPIENTRY eglGetProcAddress (
+EGLAPI __eglMustCastToProperFunctionPointerType EGLAPIENTRY eglGetProcAddress (
     const char *procname)
 {
     size_t len = strlen (procname);

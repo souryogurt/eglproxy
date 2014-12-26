@@ -7,6 +7,11 @@
 #pragma warning( disable: 4820 )
 #pragma warning( disable: 4255 )
 #endif /* _MSC_VER */
+
+#if defined(_WIN32) && !defined(__SCITECH_SNAP__)
+#   define EGLAPI __declspec(dllexport)
+#endif
+
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #ifdef _MSC_VER
