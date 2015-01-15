@@ -13,6 +13,8 @@ list(APPEND EGLPROXY_HEADERS "inc/eglproxy.h")
 list(APPEND EGLPROXY_INCLUDE_DIRS "inc")
 
 if (UNIX AND NOT APPLE)
+    find_package(X11 REQUIRED)
+    list(APPEND EGLPROXY_INCLUDE_DIRS ${X11_X11_INCLUDE_PATH})
     list(APPEND EGLPROXY_SOURCES "src/egl_glx.c")
 elseif(WIN32)
     list(APPEND EGLPROXY_SOURCES "src/egl_wgl.c")
