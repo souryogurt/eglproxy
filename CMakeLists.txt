@@ -12,6 +12,10 @@ list(APPEND EGLPROXY_SOURCES "src/egl_proc.c")
 list(APPEND EGLPROXY_HEADERS "inc/eglproxy.h")
 list(APPEND EGLPROXY_INCLUDE_DIRS "inc")
 
+find_package(OpenGL REQUIRED)
+list(APPEND EGLPROXY_INCLUDE_DIRS ${OPENGL_INCLUDE_DIR})
+list(APPEND EGLPROXY_LIBRARIES ${OPENGL_gl_LIBRARY})
+
 if (UNIX AND NOT APPLE)
     find_package(X11 REQUIRED)
     list(APPEND EGLPROXY_INCLUDE_DIRS ${X11_X11_INCLUDE_PATH})
@@ -22,3 +26,4 @@ endif()
 
 include_directories(${EGLPROXY_INCLUDE_DIRS})
 add_library(eglproxy ${EGLPROXY_SOURCES} ${EGLPROXY_HEADERS})
+target_link_libraries(eglproxy ${EGLPROXY_LIBRARIES})
