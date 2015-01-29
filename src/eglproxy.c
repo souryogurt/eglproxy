@@ -6,6 +6,7 @@ typedef struct EGLProxyConfigEntry {
     EGLint caveat;
     EGLint buffer_type;
     EGLint n_colorbits;
+    EGLint padding;
 } EGLProxyConfigEntry;
 
 static const EGLProxyConfig default_query = {

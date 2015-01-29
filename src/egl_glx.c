@@ -40,6 +40,7 @@ struct PlatformDisplay {
 struct PlatformDisplayAttributes {
     EGLNativeDisplayType native_display;
     int screen;
+    int padding;
 };
 
 void *platform_create_context (PlatformDisplay *display,
