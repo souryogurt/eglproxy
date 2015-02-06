@@ -263,11 +263,11 @@ static EGLint glx_populate_from_fbconfigs (PlatformDisplay *display,
         egl_config->bind_to_texture_rgb = EGL_FALSE;
         egl_config->bind_to_texture_rgba = EGL_FALSE;
 
-        /*
         glXGetFBConfigAttrib (display->x11_display, glx_config,
                               GLX_DOUBLEBUFFER, &value);
-        egl_config->double_buffer = (value == True) ? EGL_TRUE : EGL_FALSE;
-        */
+        if (value != True) {
+            continue;
+        }
         egl_config->config_id = current_config + 1;
         glXGetFBConfigAttrib (display->x11_display, glx_config,
                               GLX_DEPTH_SIZE, (int *)&egl_config->depth_size);
@@ -427,12 +427,12 @@ static EGLint glx_populate_from_visualinfos (PlatformDisplay *display,
         egl_config->alpha_mask_size = 0;
         egl_config->bind_to_texture_rgb = 0;
         egl_config->bind_to_texture_rgba = 0;
-        /*
         if (err == 0) {
             err = glXGetConfig (display->x11_display, info, GLX_DOUBLEBUFFER, &value);
         }
-        egl_config->double_buffer = (value == True) ? EGL_TRUE : EGL_FALSE;
-        */
+        if (err != 0 || value != True) {
+            continue;
+        }
         if (err == 0) {
             err = glXGetConfig (display->x11_display, info, GLX_RGBA, &value);
         }

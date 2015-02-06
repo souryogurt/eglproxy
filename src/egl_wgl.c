@@ -363,9 +363,9 @@ static EGLint wgl_populate_from_arb_pixel_format (PlatformDisplay *display,
         egl_config->bind_to_texture_rgb = EGL_FALSE;
         egl_config->bind_to_texture_rgba = EGL_FALSE;
 
-        /*
-        egl_config->double_buffer = values[7] ? EGL_TRUE : EGL_FALSE;
-        */
+        if (values[7] == 0) {
+            continue;
+        }
         switch (values[8]) {
             case WGL_NO_ACCELERATION_ARB:
                 egl_config->config_caveat = EGL_SLOW_CONFIG;
@@ -479,10 +479,9 @@ static EGLint wgl_populate_default (PlatformDisplay *display,
         egl_config->alpha_mask_size = 0;
         egl_config->bind_to_texture_rgb = 0;
         egl_config->bind_to_texture_rgba = 0;
-        /*
-        egl_config->double_buffer = (pfd.dwFlags & PFD_DOUBLEBUFFER) ? EGL_TRUE :
-                                    EGL_FALSE;
-        */
+        if ((pfd.dwFlags & PFD_DOUBLEBUFFER) == 0) {
+            continue;
+        }
         if (! (pfd.dwFlags & PFD_GENERIC_ACCELERATED)
                 && ! (pfd.dwFlags & PFD_GENERIC_FORMAT)) {
             egl_config->config_caveat = EGL_NONE;
