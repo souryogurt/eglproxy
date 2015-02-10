@@ -9,7 +9,11 @@
 #endif /* _MSC_VER */
 
 #if defined(_WIN32) && !defined(__SCITECH_SNAP__)
-#   define EGLAPI __declspec(dllexport)
+#   if defined(eglproxy_EXPORTS)
+#       define EGLAPI __declspec(dllexport)
+#   else
+#       define EGLAPI
+#   endif
 #endif
 
 #include <EGL/egl.h>
