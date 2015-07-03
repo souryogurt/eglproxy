@@ -10,6 +10,11 @@ eglGetErrorTest (void)
 {
     /* first call of eglGetError returns EGL_SUCCESS */
     mu_assert (eglGetError() == EGL_SUCCESS);
+
+    /* eglGetError() returns current error state */
+    eglSetError (EGL_NOT_INITIALIZED);
+    mu_assert (eglGetError() == EGL_NOT_INITIALIZED);
+
     /* calling eglGetError twice without any other intervening EGL calls will
        always return EGL_SUCCESS on the second call*/
     mu_assert (eglGetError() == EGL_SUCCESS);
