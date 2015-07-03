@@ -1,30 +1,18 @@
-project (EGLPROXY C)
+project (TESTS C)
 cmake_minimum_required(VERSION 2.8.9)
-
-set(EGLPROXY_VERSION_MAJOR "0")
-set(EGLPROXY_VERSION_MINOR "1")
-set(EGLPROXY_VERSION "${EGLPROXY_VERSION_MAJOR}.${EGLPROXY_VERSION_MINOR}")
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(NINJA_MODE "Enable all warnings" ON)
-option(BUILD_EGLPROXY_TESTS "Build eglproxy tests" OFF)
 
-list(APPEND EGLPROXY_SOURCES "src/eglproxy.c")
-list(APPEND EGLPROXY_SOURCES "src/egl_proc.c")
-list(APPEND EGLPROXY_HEADERS "inc/eglproxy.h")
-list(APPEND EGLPROXY_INCLUDE_DIRS "inc")
 
 find_package(OpenGL REQUIRED)
-list(APPEND EGLPROXY_INCLUDE_DIRS ${OPENGL_INCLUDE_DIR})
-list(APPEND EGLPROXY_LIBRARIES ${OPENGL_gl_LIBRARY})
-
+list(APPEND TESTS_INCLUDE_DIRS ${OPENGL_INCLUDE_DIR})
+list(APPEND TESTS_LIBRARIES ${OPENGL_gl_LIBRARY})
+list(APPEND TESTS_INCLUDE_DIRS "../inc")
 
 if (UNIX AND NOT APPLE)
     find_package(X11 REQUIRED)
-    list(APPEND EGLPROXY_INCLUDE_DIRS ${X11_X11_INCLUDE_PATH})
-    list(APPEND EGLPROXY_SOURCES "src/egl_glx.c")
-elseif(WIN32)
-    list(APPEND EGLPROXY_SOURCES "src/egl_wgl.c")
+    list(APPEND TESTS_INCLUDE_DIRS ${X11_X11_INCLUDE_PATH})
 endif()
 
 if(NINJA_MODE)
@@ -41,10 +29,15 @@ if(NINJA_MODE)
     endif()
 endif()
 
-include_directories(${EGLPROXY_INCLUDE_DIRS})
-add_library(eglproxy ${EGLPROXY_SOURCES} ${EGLPROXY_HEADERS})
-target_link_libraries(eglproxy ${EGLPROXY_LIBRARIES})
+include_directories(${TESTS_INCLUDE_DIRS})
 
-if(BUILD_EGLPROXY_TESTS)
-    add_subdirectory(tests)
-endif()
+list(APPEND EGLTEST_SOURCES "egltest.c")
+list(APPEND EGLTEST_SOURCES "platform_mock.c")
+list(APPEND EGLTEST_SOURCES "../src/egl_proc.c")
+list(APPEND EGLTEST_SOURCES "../src/eglproxy.c")
+list(APPEND EGLTEST_HEADERS "minunit.h")
+list(APPEND EGLTEST_HEADERS "../inc/eglproxy.h")
+add_executable(egltest ${EGLTEST_SOURCES} ${EGLTEST_HEADERS})
+target_link_libraries(egltest ${TESTS_LIBRARIES})
+
+add_custom_target(check COMMAND egltest DEPENDS egltest)
