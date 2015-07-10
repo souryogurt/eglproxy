@@ -880,7 +880,9 @@ EGLAPI EGLBoolean EGLAPIENTRY eglTerminate (EGLDisplay dpy)
 
 EGLAPI EGLint EGLAPIENTRY eglGetError (void)
 {
-    return last_error;
+    EGLint result = last_error;
+    eglSetError (EGL_SUCCESS);
+    return result;
 }
 
 EGLAPI EGLBoolean EGLAPIENTRY eglGetConfigs (EGLDisplay dpy, EGLConfig *configs,
