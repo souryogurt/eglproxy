@@ -21,8 +21,19 @@ eglGetErrorTest (void)
     return NULL;
 }
 
+static const char *
+display_bad_platform (void)
+{
+    const EGLenum bad_platform = 0xBAD;
+    EGLDisplay display = eglGetPlatformDisplay (bad_platform, NULL, NULL);
+    mu_assert (display == EGL_NO_DISPLAY);
+    mu_assert (eglGetError() == EGL_BAD_PARAMETER);
+    return NULL;
+}
+
 int main (void)
 {
     mu_run_test (eglGetErrorTest);
+    mu_run_test (display_bad_platform);
     return 0;
 }

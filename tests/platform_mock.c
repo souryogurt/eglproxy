@@ -58,6 +58,7 @@ PlatformDisplayAttributes *platform_display_attributes_create (EGLenum platform,
     UNUSED (platform);
     UNUSED (native_display);
     UNUSED (attrib_list);
+    eglSetError (EGL_BAD_PARAMETER);
     return NULL;
 }
 
