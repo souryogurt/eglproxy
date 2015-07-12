@@ -996,3 +996,30 @@ EGLAPI EGLBoolean EGLAPIENTRY eglQuerySurface (EGLDisplay dpy,
     }
     return EGL_TRUE;
 }
+
+EGLAPI EGLSurface EGLAPIENTRY eglCreatePbufferSurface (EGLDisplay dpy,
+        EGLConfig config, const EGLint *attrib_list)
+{
+    EGLProxyConfig *egl_config = NULL;
+    EGLProxyDisplay *egl_display = displays;
+    while ((egl_display != NULL) && (egl_display != dpy)) {
+        egl_display = egl_display->next;
+    }
+    if (egl_display == NULL) {
+        eglSetError (EGL_BAD_DISPLAY);
+        return EGL_NO_SURFACE;
+    }
+    if (egl_display->initialized == EGL_FALSE) {
+        eglSetError (EGL_NOT_INITIALIZED);
+        return EGL_NO_SURFACE;
+    }
+    CHECK_EGLCONFIG (dpy, config);
+    egl_config = (EGLProxyConfig *)config;
+    if ((egl_config->surface_type & EGL_PBUFFER_BIT) == 0) {
+        eglSetError (EGL_BAD_MATCH);
+        return EGL_NO_SURFACE;
+    }
+    UNUSED (attrib_list);
+    /* TODO: Parse attributes */
+    return EGL_NO_SURFACE;
+}
