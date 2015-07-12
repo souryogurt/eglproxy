@@ -59,6 +59,13 @@ static const ContextAttributes default_context_attributes = {
     EGL_NO_RESET_NOTIFICATION /* EGL_CONTEXT_OPENGL_RESET_NOTIFICATION_STRATEGY */
 };
 
+static const WindowSurfaceAttributes default_window_surface_attributes = {
+    EGL_GL_COLORSPACE_LINEAR, /* EGL_GL_COLORSPACE */
+    EGL_BACK_BUFFER, /* EGL_RENDER_BUFFER */
+    EGL_VG_COLORSPACE_sRGB, /* EGL_VG_COLORSPACE */
+    EGL_VG_ALPHA_FORMAT_NONPRE /* EGL_VG_ALPHA_FORMAT */
+};
+
 static EGLProxyDisplay *displays = NULL;
 
 static EGLenum CurrentAPI = EGL_NONE; /*TODO: Should be in TLS */
@@ -510,6 +517,51 @@ EGLAPI EGLSurface EGLAPIENTRY eglCreatePlatformWindowSurface (EGLDisplay dpy,
                                    (const EGLint *)attrib_list);
 }
 
+static int parse_window_surface_attributes (WindowSurfaceAttributes *attributes,
+        const EGLint *attrib_list)
+{
+    size_t i = 0;
+    if (attrib_list == NULL) {
+        return 1;
+    }
+    for (i = 0; attrib_list[i] != EGL_NONE; i += 2) {
+        EGLint value = attrib_list[i + 1];
+        switch (attrib_list[i]) {
+            case EGL_GL_COLORSPACE:
+                if ((value != EGL_GL_COLORSPACE_LINEAR) &&
+                        (value != EGL_GL_COLORSPACE_SRGB)) {
+                    return 0;
+                }
+                attributes->gl_colorspace = value;
+                break;
+            case EGL_RENDER_BUFFER:
+                if ((value != EGL_SINGLE_BUFFER) &&
+                        (value != EGL_BACK_BUFFER)) {
+                    return 0;
+                }
+                attributes->render_buffer = value;
+                break;
+            case EGL_VG_COLORSPACE:
+                if ((value != EGL_VG_COLORSPACE_sRGB) &&
+                        (value != EGL_VG_COLORSPACE_LINEAR)) {
+                    return 0;
+                }
+                attributes->vg_colorspace = value;
+                break;
+            case EGL_VG_ALPHA_FORMAT:
+                if ((value != EGL_VG_ALPHA_FORMAT_NONPRE) &&
+                        (value != EGL_VG_ALPHA_FORMAT_PRE)) {
+                    return 0;
+                }
+                attributes->vg_alpha_format = value;
+                break;
+            default:
+                return 0;
+        }
+    }
+    return 1;
+}
+
 EGLAPI EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy,
         EGLConfig config,
         EGLNativeWindowType win,
@@ -518,6 +570,7 @@ EGLAPI EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy,
     EGLProxySurface *egl_surface = NULL;
     EGLProxyConfig *egl_config = NULL;
     EGLProxyDisplay *egl_display = displays;
+    WindowSurfaceAttributes attributes = default_window_surface_attributes;
     while ((egl_display != NULL) && (egl_display != dpy)) {
         egl_display = egl_display->next;
     }
@@ -535,8 +588,10 @@ EGLAPI EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy,
         eglSetError (EGL_BAD_MATCH);
         return EGL_NO_SURFACE;
     }
-    UNUSED (attrib_list);
-    /* TODO: parse attribute list */
+    if (parse_window_surface_attributes (&attributes, attrib_list) == 0) {
+        eglSetError (EGL_BAD_ATTRIBUTE);
+        return EGL_NO_SURFACE;
+    }
     if (window_is_valid (egl_display->platform, win) == EGL_FALSE) {
         eglSetError (EGL_BAD_NATIVE_WINDOW);
         return EGL_NO_SURFACE;
@@ -555,11 +610,12 @@ EGLAPI EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy,
     egl_surface = (EGLProxySurface *) malloc (sizeof (EGLProxySurface));
     if (egl_surface != NULL) {
         egl_surface->platform = platform_window_surface_create (egl_display->platform,
-                                egl_config, win);
+                                egl_config, win, &attributes);
         if (egl_surface->platform) {
             egl_surface->next = egl_display->surfaces;
             egl_display->surfaces = egl_surface;
             egl_surface->window = win;
+            egl_surface->attributes = attributes;
             eglSetError (EGL_SUCCESS);
             return (EGLSurface)egl_surface;
         }
@@ -914,5 +970,29 @@ EGLAPI EGLBoolean EGLAPIENTRY eglGetConfigs (EGLDisplay dpy, EGLConfig *configs,
         configs[*num_config] = (EGLConfig) &egl_display->configs[*num_config];
     }
     eglSetError (EGL_SUCCESS);
+    return EGL_TRUE;
+}
+
+EGLAPI EGLBoolean EGLAPIENTRY eglQuerySurface (EGLDisplay dpy,
+        EGLSurface surface, EGLint attribute, EGLint *value)
+{
+    EGLProxySurface *egl_surface = (EGLProxySurface *) surface;
+    UNUSED (dpy);
+    switch (attribute) {
+        case EGL_GL_COLORSPACE:
+            *value = egl_surface->attributes.gl_colorspace;
+            break;
+        case EGL_RENDER_BUFFER:
+            *value = egl_surface->attributes.render_buffer;
+            break;
+        case EGL_VG_COLORSPACE:
+            *value = egl_surface->attributes.vg_colorspace;
+            break;
+        case EGL_VG_ALPHA_FORMAT:
+            *value = egl_surface->attributes.vg_alpha_format;
+            break;
+        default:
+            return EGL_FALSE;
+    }
     return EGL_TRUE;
 }

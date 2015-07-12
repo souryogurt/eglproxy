@@ -77,9 +77,17 @@ typedef struct EGLProxyContext {
     struct EGLProxyContext *next;
 } EGLProxyContext;
 
+typedef struct WindowSurfaceAttributes {
+    EGLint gl_colorspace;
+    EGLint render_buffer;
+    EGLint vg_colorspace;
+    EGLint vg_alpha_format;
+} WindowSurfaceAttributes;
+
 typedef struct EGLProxySurface {
     void *platform;
     EGLNativeWindowType window;
+    WindowSurfaceAttributes attributes;
     struct EGLProxySurface *next;
 } EGLProxySurface;
 
@@ -111,7 +119,8 @@ void *platform_create_context (PlatformDisplay *display,
 void platform_context_destroy (PlatformDisplay *display, void *context);
 void *platform_window_surface_create (PlatformDisplay *display,
                                       EGLProxyConfig *egl_config,
-                                      EGLNativeWindowType win);
+                                      EGLNativeWindowType win,
+                                      WindowSurfaceAttributes *attributes);
 void platform_window_surface_destroy (PlatformDisplay *display,
                                       void *drawable);
 PlatformDisplay *platform_display_create (const PlatformDisplayAttributes

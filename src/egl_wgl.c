@@ -217,10 +217,12 @@ int window_is_match_config (PlatformDisplay *display, EGLNativeWindowType win,
 
 void *platform_window_surface_create (PlatformDisplay *display,
                                       EGLProxyConfig *egl_config,
-                                      EGLNativeWindowType win)
+                                      EGLNativeWindowType win,
+                                      WindowSurfaceAttributes *attributes)
 {
     HDC hDC = GetDC (win);
     UNUSED (display);
+    UNUSED (attributes);
     if (GetPixelFormat (hDC) != egl_config->native_visual_id) {
         ReleaseDC (win, hDC);
         return NULL;

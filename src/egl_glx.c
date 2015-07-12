@@ -102,9 +102,11 @@ int window_is_match_config (PlatformDisplay *display, EGLNativeWindowType win,
 
 void *platform_window_surface_create (PlatformDisplay *display,
                                       EGLProxyConfig *egl_config,
-                                      EGLNativeWindowType win)
+                                      EGLNativeWindowType win,
+                                      WindowSurfaceAttributes *attributes)
 {
     GLXDrawable result = win;
+    UNUSED (attributes);
     if (display->is_modern) {
         GLXFBConfig glx_config = (GLXFBConfig) egl_config->platform;
         result = glXCreateWindow (display->x11_display, glx_config, win, NULL);
