@@ -35,6 +35,8 @@ struct PlatformDisplay {
     int is_ext_visual_rating; /**< Is GLX_EXT_visual_rating there */
     int is_ext_visual_info; /**< Is GLX_EXT_visual_info there */
     int is_arb_multisample; /**< Is GLX_ARB_multisample there */
+    int is_ext_create_context_es_profile;
+    int is_ext_create_context_es2_profile;
 };
 
 struct PlatformDisplayAttributes {
@@ -235,8 +237,12 @@ static EGLint glx_populate_from_fbconfigs (PlatformDisplay *display,
         } else {
             egl_config->config_caveat = EGL_NON_CONFORMANT_CONFIG;
         }
-        egl_config->conformant = EGL_OPENGL_BIT;
         egl_config->renderable_type = EGL_OPENGL_BIT;
+        egl_config->renderable_type |= (display->is_ext_create_context_es_profile) ?
+                                       EGL_OPENGL_ES_BIT : 0;
+        egl_config->renderable_type |= (display->is_ext_create_context_es2_profile) ?
+                                       EGL_OPENGL_ES2_BIT | EGL_OPENGL_ES3_BIT : 0;
+        egl_config->conformant = egl_config->renderable_type;
         glXGetFBConfigAttrib (display->x11_display, glx_config, GLX_RED_SIZE,
                               (int *)&egl_config->red_size);
         glXGetFBConfigAttrib (display->x11_display, glx_config, GLX_GREEN_SIZE,
@@ -262,9 +268,6 @@ static EGLint glx_populate_from_fbconfigs (PlatformDisplay *display,
             continue; /* Skip configs with RX GX B0 */
         }
         egl_config->alpha_mask_size = 0;
-        egl_config->bind_to_texture_rgb = EGL_FALSE;
-        egl_config->bind_to_texture_rgba = EGL_FALSE;
-
         glXGetFBConfigAttrib (display->x11_display, glx_config,
                               GLX_DOUBLEBUFFER, &value);
         if (value != True) {
@@ -343,6 +346,13 @@ static EGLint glx_populate_from_fbconfigs (PlatformDisplay *display,
         egl_config->surface_type |= (value & GLX_WINDOW_BIT) ? EGL_WINDOW_BIT : 0;
         egl_config->surface_type |= (value & GLX_PIXMAP_BIT) ? EGL_PIXMAP_BIT : 0;
         egl_config->surface_type |= (value & GLX_PBUFFER_BIT) ? EGL_PBUFFER_BIT : 0;
+
+        egl_config->bind_to_texture_rgb = ((egl_config->renderable_type &
+                                            EGL_OPENGL_ES_BIT)
+                                           && (egl_config->surface_type & EGL_PBUFFER_BIT)) ? EGL_TRUE : EGL_FALSE;
+        egl_config->bind_to_texture_rgba = ((egl_config->renderable_type &
+                                             EGL_OPENGL_ES_BIT)
+                                            && (egl_config->surface_type & EGL_PBUFFER_BIT)) ? EGL_TRUE : EGL_FALSE;
 
         glXGetFBConfigAttrib (display->x11_display, glx_config,
                               GLX_TRANSPARENT_TYPE,
@@ -427,8 +437,6 @@ static EGLint glx_populate_from_visualinfos (PlatformDisplay *display,
             continue; /* Skip configs with RX GX B0 */
         }
         egl_config->alpha_mask_size = 0;
-        egl_config->bind_to_texture_rgb = 0;
-        egl_config->bind_to_texture_rgba = 0;
         if (err == 0) {
             err = glXGetConfig (display->x11_display, info, GLX_DOUBLEBUFFER, &value);
         }
@@ -454,8 +462,12 @@ static EGLint glx_populate_from_visualinfos (PlatformDisplay *display,
             }
         }
         egl_config->config_id = current_config + 1;
-        egl_config->conformant = EGL_OPENGL_BIT;
         egl_config->renderable_type = EGL_OPENGL_BIT;
+        egl_config->renderable_type |= (display->is_ext_create_context_es_profile) ?
+                                       EGL_OPENGL_ES_BIT : 0;
+        egl_config->renderable_type |= (display->is_ext_create_context_es2_profile) ?
+                                       EGL_OPENGL_ES2_BIT | EGL_OPENGL_ES3_BIT : 0;
+        egl_config->conformant = egl_config->renderable_type;
         if (err == 0) {
             err = glXGetConfig (display->x11_display, info, GLX_DEPTH_SIZE,
                                 (int *) &egl_config->depth_size);
@@ -504,6 +516,13 @@ static EGLint glx_populate_from_visualinfos (PlatformDisplay *display,
                                 (int *) &egl_config->stencil_size);
         }
         egl_config->surface_type = EGL_WINDOW_BIT | EGL_PIXMAP_BIT;
+        egl_config->bind_to_texture_rgb = ((egl_config->renderable_type &
+                                            EGL_OPENGL_ES_BIT)
+                                           && (egl_config->surface_type & EGL_PBUFFER_BIT)) ? EGL_TRUE : EGL_FALSE;
+        egl_config->bind_to_texture_rgba = ((egl_config->renderable_type &
+                                             EGL_OPENGL_ES_BIT)
+                                            && (egl_config->surface_type & EGL_PBUFFER_BIT)) ? EGL_TRUE : EGL_FALSE;
+
 
         egl_config->transparent_type = EGL_NONE;
         if ((display->is_ext_visual_info)
@@ -576,6 +595,12 @@ EGLint platform_display_initialize (PlatformDisplay *display,
     display->is_arb_multisample = is_extension_supported (
                                       extensions,
                                       "GLX_ARB_multisample");
+    display->is_ext_create_context_es_profile = is_extension_supported (
+                extensions,
+                "GLX_EXT_create_context_es_profile");
+    display->is_ext_create_context_es2_profile = is_extension_supported (
+                extensions,
+                "GLX_EXT_create_context_es2_profile");
     if (display->is_modern) {
         return glx_populate_from_fbconfigs (display, config_list);
     }
