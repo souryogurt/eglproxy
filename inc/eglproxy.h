@@ -79,10 +79,22 @@ typedef struct EGLProxyContext {
 
 typedef struct WindowSurfaceAttributes {
     EGLint gl_colorspace;
-    EGLint render_buffer;
     EGLint vg_colorspace;
     EGLint vg_alpha_format;
+    EGLint render_buffer;
 } WindowSurfaceAttributes;
+
+typedef struct PBufferSurfaceAttributes {
+    EGLint gl_colorspace;
+    EGLint vg_colorspace;
+    EGLint vg_alpha_format;
+    EGLint width;
+    EGLint height;
+    EGLint largest_pbuffer;
+    EGLint texture_format;
+    EGLint texture_target;
+    EGLint mipmap_texture;
+} PBufferSurfaceAttributes;
 
 typedef struct EGLProxySurface {
     void *platform;

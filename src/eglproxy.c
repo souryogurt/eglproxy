@@ -61,9 +61,21 @@ static const ContextAttributes default_context_attributes = {
 
 static const WindowSurfaceAttributes default_window_surface_attributes = {
     EGL_GL_COLORSPACE_LINEAR, /* EGL_GL_COLORSPACE */
-    EGL_BACK_BUFFER, /* EGL_RENDER_BUFFER */
     EGL_VG_COLORSPACE_sRGB, /* EGL_VG_COLORSPACE */
-    EGL_VG_ALPHA_FORMAT_NONPRE /* EGL_VG_ALPHA_FORMAT */
+    EGL_VG_ALPHA_FORMAT_NONPRE, /* EGL_VG_ALPHA_FORMAT */
+    EGL_BACK_BUFFER /* EGL_RENDER_BUFFER */
+};
+
+static const PBufferSurfaceAttributes default_pbuffer_surface_attributes = {
+    EGL_GL_COLORSPACE_LINEAR, /* EGL_GL_COLORSPACE */
+    EGL_VG_COLORSPACE_sRGB, /* EGL_VG_COLORSPACE */
+    EGL_VG_ALPHA_FORMAT_NONPRE, /* EGL_VG_ALPHA_FORMAT */
+    0, /* EGL_WIDTH */
+    0, /* EGL_HEIGHT */
+    EGL_FALSE, /* EGL_LARGEST_PBUFFER */
+    EGL_NO_TEXTURE, /* EGL_TEXTURE_FORMAT */
+    EGL_NO_TEXTURE, /* EGL_TEXTURE_TARGET */
+    EGL_FALSE /* EGL_MIPMAP_TEXTURE */
 };
 
 static EGLProxyDisplay *displays = NULL;
@@ -562,6 +574,63 @@ static int parse_window_surface_attributes (WindowSurfaceAttributes *attributes,
     return 1;
 }
 
+static int parse_pbuffer_surface_attributes (PBufferSurfaceAttributes
+        *attributes,
+        const EGLint *attrib_list)
+{
+    size_t i = 0;
+    if (attrib_list == NULL) {
+        return 1;
+    }
+    for (i = 0; attrib_list[i] != EGL_NONE; i += 2) {
+        EGLint value = attrib_list[i + 1];
+        switch (attrib_list[i]) {
+            case EGL_GL_COLORSPACE:
+                if ((value != EGL_GL_COLORSPACE_LINEAR) &&
+                        (value != EGL_GL_COLORSPACE_SRGB)) {
+                    return 0;
+                }
+                attributes->gl_colorspace = value;
+                break;
+            case EGL_VG_COLORSPACE:
+                if ((value != EGL_VG_COLORSPACE_sRGB) &&
+                        (value != EGL_VG_COLORSPACE_LINEAR)) {
+                    return 0;
+                }
+                attributes->vg_colorspace = value;
+                break;
+            case EGL_VG_ALPHA_FORMAT:
+                if ((value != EGL_VG_ALPHA_FORMAT_NONPRE) &&
+                        (value != EGL_VG_ALPHA_FORMAT_PRE)) {
+                    return 0;
+                }
+                attributes->vg_alpha_format = value;
+                break;
+            case EGL_WIDTH:
+                attributes->width = value;
+                break;
+            case EGL_HEIGHT:
+                attributes->height = value;
+                break;
+            case EGL_LARGEST_PBUFFER:
+                attributes->largest_pbuffer = value;
+                break;
+            case EGL_TEXTURE_FORMAT:
+                attributes->texture_format = value;
+                break;
+            case EGL_TEXTURE_TARGET:
+                attributes->texture_target = value;
+                break;
+            case EGL_MIPMAP_TEXTURE:
+                attributes->mipmap_texture = value;
+                break;
+            default:
+                return 0;
+        }
+    }
+    return 1;
+}
+
 EGLAPI EGLSurface EGLAPIENTRY eglCreateWindowSurface (EGLDisplay dpy,
         EGLConfig config,
         EGLNativeWindowType win,
@@ -1002,6 +1071,9 @@ EGLAPI EGLSurface EGLAPIENTRY eglCreatePbufferSurface (EGLDisplay dpy,
 {
     EGLProxyConfig *egl_config = NULL;
     EGLProxyDisplay *egl_display = displays;
+    PBufferSurfaceAttributes attributes = default_pbuffer_surface_attributes;
+    const EGLint OpenGLES_mask =
+        EGL_OPENGL_ES_BIT | EGL_OPENGL_ES2_BIT | EGL_OPENGL_ES3_BIT;
     while ((egl_display != NULL) && (egl_display != dpy)) {
         egl_display = egl_display->next;
     }
@@ -1019,7 +1091,28 @@ EGLAPI EGLSurface EGLAPIENTRY eglCreatePbufferSurface (EGLDisplay dpy,
         eglSetError (EGL_BAD_MATCH);
         return EGL_NO_SURFACE;
     }
-    UNUSED (attrib_list);
-    /* TODO: Parse attributes */
+    if (parse_pbuffer_surface_attributes (&attributes, attrib_list) == 0) {
+        eglSetError (EGL_BAD_ATTRIBUTE);
+        return EGL_NO_SURFACE;
+    }
+    if (attributes.width < 0 || attributes.height < 0) {
+        eglSetError (EGL_BAD_PARAMETER);
+        return EGL_NO_SURFACE;
+    }
+    if (((egl_config->renderable_type & OpenGLES_mask) == 0) &&
+            ((attributes.texture_format != EGL_NO_TEXTURE) ||
+             (attributes.texture_target != EGL_NO_TEXTURE) ||
+             (attributes.mipmap_texture != EGL_FALSE))) {
+        eglSetError (EGL_BAD_ATTRIBUTE);
+        return EGL_NO_SURFACE;
+    }
+
+    if (((attributes.texture_format == EGL_NO_TEXTURE) &&
+            (attributes.texture_target != EGL_NO_TEXTURE)) ||
+            ((attributes.texture_format != EGL_NO_TEXTURE) &&
+             (attributes.texture_target == EGL_NO_TEXTURE))) {
+        eglSetError (EGL_BAD_MATCH);
+        return EGL_NO_SURFACE;
+    }
     return EGL_NO_SURFACE;
 }
