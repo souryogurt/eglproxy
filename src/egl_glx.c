@@ -213,6 +213,7 @@ static EGLint glx_populate_from_fbconfigs (PlatformDisplay *display,
     EGLProxyConfig *list = (EGLProxyConfig *) calloc ((size_t)n_configs,
                            sizeof (EGLProxyConfig));
     if (list == NULL) {
+        XFree (glx_configs);
         return 0;
     }
     *config_list = list;
@@ -374,6 +375,7 @@ static EGLint glx_populate_from_fbconfigs (PlatformDisplay *display,
         current_config++;
         list++;
     }
+    XFree (glx_configs);
     return current_config;
 }
 
