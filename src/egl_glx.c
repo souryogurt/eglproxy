@@ -105,7 +105,7 @@ int window_is_match_config (PlatformDisplay *display, EGLNativeWindowType win,
 void *platform_window_surface_create (PlatformDisplay *display,
                                       EGLProxyConfig *egl_config,
                                       EGLNativeWindowType win,
-                                      WindowSurfaceAttributes *attributes)
+                                      SurfaceAttributes *attributes)
 {
     GLXDrawable result = win;
     UNUSED (attributes);

@@ -77,29 +77,29 @@ typedef struct EGLProxyContext {
     struct EGLProxyContext *next;
 } EGLProxyContext;
 
-typedef struct WindowSurfaceAttributes {
+typedef struct SurfaceAttributes {
     EGLint gl_colorspace;
     EGLint vg_colorspace;
     EGLint vg_alpha_format;
-    EGLint render_buffer;
-} WindowSurfaceAttributes;
-
-typedef struct PBufferSurfaceAttributes {
-    EGLint gl_colorspace;
-    EGLint vg_colorspace;
-    EGLint vg_alpha_format;
-    EGLint width;
-    EGLint height;
-    EGLint largest_pbuffer;
-    EGLint texture_format;
-    EGLint texture_target;
-    EGLint mipmap_texture;
-} PBufferSurfaceAttributes;
+    union {
+        struct PBufferSurfaceAttributes {
+            EGLint width;
+            EGLint height;
+            EGLint largest_pbuffer;
+            EGLint texture_format;
+            EGLint texture_target;
+            EGLint mipmap_texture;
+        } pbuffer;
+        struct WindowSurfaceAttributes {
+            EGLint render_buffer;
+        } window;
+    } specific;
+} SurfaceAttributes;
 
 typedef struct EGLProxySurface {
     void *platform;
     EGLNativeWindowType window;
-    WindowSurfaceAttributes attributes;
+    SurfaceAttributes attributes;
     struct EGLProxySurface *next;
 } EGLProxySurface;
 
@@ -132,7 +132,7 @@ void platform_context_destroy (PlatformDisplay *display, void *context);
 void *platform_window_surface_create (PlatformDisplay *display,
                                       EGLProxyConfig *egl_config,
                                       EGLNativeWindowType win,
-                                      WindowSurfaceAttributes *attributes);
+                                      SurfaceAttributes *attributes);
 void platform_window_surface_destroy (PlatformDisplay *display,
                                       void *drawable);
 PlatformDisplay *platform_display_create (const PlatformDisplayAttributes
