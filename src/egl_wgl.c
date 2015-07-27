@@ -110,6 +110,8 @@ struct PlatformDisplay {
     PFNWGLGETPIXELFORMATATTRIBIVARBPROC wglGetPixelFormatAttribivARB;
     int is_arb_context_profile; /**< Is WGL_ARB_create_context_profile there*/
     int is_arb_multisample; /**< Is WGL_ARB_multisample there */
+    int is_ext_create_context_es_profile;
+    int is_ext_create_context_es2_profile;
 };
 
 struct PlatformDisplayAttributes {
@@ -217,8 +219,9 @@ int window_is_match_config (PlatformDisplay *display, EGLNativeWindowType win,
 
 void *platform_window_surface_create (PlatformDisplay *display,
                                       EGLProxyConfig *egl_config,
-                                      EGLNativeWindowType win)
+                                      SurfaceAttributes *attributes)
 {
+    EGLNativeWindowType win = attributes->specific.window.id;
     HDC hDC = GetDC (win);
     UNUSED (display);
     if (GetPixelFormat (hDC) != egl_config->native_visual_id) {
@@ -359,10 +362,6 @@ static EGLint wgl_populate_from_arb_pixel_format (PlatformDisplay *display,
             continue; /* Skip configs with RX GX B0 */
         }
         egl_config->alpha_mask_size = 0;
-        /* TODO: implement using WGL_ARB_render_texture */
-        egl_config->bind_to_texture_rgb = EGL_FALSE;
-        egl_config->bind_to_texture_rgba = EGL_FALSE;
-
         if (values[7] == 0) {
             continue;
         }
@@ -380,8 +379,20 @@ static EGLint wgl_populate_from_arb_pixel_format (PlatformDisplay *display,
                 egl_config->config_caveat = EGL_NON_CONFORMANT_CONFIG;
                 break;
         }
-        egl_config->conformant = EGL_OPENGL_BIT;
         egl_config->renderable_type = EGL_OPENGL_BIT;
+        egl_config->renderable_type |= (display->is_ext_create_context_es_profile) ?
+                                       EGL_OPENGL_ES_BIT : 0;
+        egl_config->renderable_type |= (display->is_ext_create_context_es2_profile) ?
+                                       EGL_OPENGL_ES2_BIT | EGL_OPENGL_ES3_BIT : 0;
+        egl_config->conformant = egl_config->renderable_type;
+        /* TODO: implement using WGL_ARB_render_texture */
+        egl_config->bind_to_texture_rgb = ((egl_config->renderable_type &
+                                            EGL_OPENGL_ES_BIT)
+                                           && (egl_config->surface_type & EGL_PBUFFER_BIT)) ? EGL_TRUE : EGL_FALSE;
+        egl_config->bind_to_texture_rgba = ((egl_config->renderable_type &
+                                             EGL_OPENGL_ES_BIT)
+                                            && (egl_config->surface_type & EGL_PBUFFER_BIT)) ? EGL_TRUE : EGL_FALSE;
+
         egl_config->depth_size = values[9];
         egl_config->level = 0;
 
@@ -477,8 +488,6 @@ static EGLint wgl_populate_default (PlatformDisplay *display,
             continue; /* Skip configs with RX GX B0 */
         }
         egl_config->alpha_mask_size = 0;
-        egl_config->bind_to_texture_rgb = 0;
-        egl_config->bind_to_texture_rgba = 0;
         if ((pfd.dwFlags & PFD_DOUBLEBUFFER) == 0) {
             continue;
         }
@@ -490,8 +499,19 @@ static EGLint wgl_populate_default (PlatformDisplay *display,
         } else {
             egl_config->config_caveat = EGL_NON_CONFORMANT_CONFIG;
         }
-        egl_config->conformant = EGL_OPENGL_BIT;
         egl_config->renderable_type = EGL_OPENGL_BIT;
+        egl_config->renderable_type |= (display->is_ext_create_context_es_profile) ?
+                                       EGL_OPENGL_ES_BIT : 0;
+        egl_config->renderable_type |= (display->is_ext_create_context_es2_profile) ?
+                                       EGL_OPENGL_ES2_BIT | EGL_OPENGL_ES3_BIT : 0;
+        egl_config->conformant = egl_config->renderable_type;
+        egl_config->bind_to_texture_rgb = ((egl_config->renderable_type &
+                                            EGL_OPENGL_ES_BIT)
+                                           && (egl_config->surface_type & EGL_PBUFFER_BIT)) ? EGL_TRUE : EGL_FALSE;
+        egl_config->bind_to_texture_rgba = ((egl_config->renderable_type &
+                                             EGL_OPENGL_ES_BIT)
+                                            && (egl_config->surface_type & EGL_PBUFFER_BIT)) ? EGL_TRUE : EGL_FALSE;
+
         egl_config->depth_size = pfd.cDepthBits;
         egl_config->level = 0;
         egl_config->max_pbuffer_width = 0;
@@ -574,6 +594,12 @@ EGLint platform_display_initialize (PlatformDisplay *display,
             display->is_arb_context_profile = is_extension_supported (extensions,
                                               "WGL_ARB_create_context_profile");
         }
+        display->is_ext_create_context_es_profile = is_extension_supported (
+                    extensions,
+                    "WGL_EXT_create_context_es_profile");
+        display->is_ext_create_context_es2_profile = is_extension_supported (
+                    extensions,
+                    "WGL_EXT_create_context_es2_profile");
         if (is_extension_supported (extensions, "WGL_ARB_pixel_format")) {
             display->wglGetPixelFormatAttribivARB = (PFNWGLGETPIXELFORMATATTRIBIVARBPROC)
                                                     wglGetProcAddress ("wglGetPixelFormatAttribivARB");
@@ -661,4 +687,20 @@ EGLBoolean window_is_valid (PlatformDisplay *display, EGLNativeWindowType win)
 {
     UNUSED (display);
     return (EGLBoolean)IsWindow (win);
+}
+
+void *platform_pbuffer_surface_create (PlatformDisplay *display,
+                                       EGLProxyConfig *egl_config,
+                                       SurfaceAttributes *attributes)
+{
+    UNUSED (display);
+    UNUSED (egl_config);
+    UNUSED (attributes);
+    return NULL;
+}
+
+void platform_pbuffer_surface_destroy (PlatformDisplay *display, void *drawable)
+{
+    UNUSED (display);
+    UNUSED (drawable);
 }
