@@ -38,11 +38,11 @@ int window_is_match_config (PlatformDisplay *display, EGLNativeWindowType win,
 
 void *platform_window_surface_create (PlatformDisplay *display,
                                       EGLProxyConfig *egl_config,
-                                      EGLNativeWindowType win)
+                                      SurfaceAttributes *attributes)
 {
     UNUSED (display);
     UNUSED (egl_config);
-    UNUSED (win);
+    UNUSED (attributes);
     return NULL;
 }
 
@@ -123,4 +123,21 @@ EGLBoolean window_is_valid (PlatformDisplay *display, EGLNativeWindowType win)
     UNUSED (display);
     UNUSED (win);
     return EGL_TRUE;
+}
+
+void *platform_pbuffer_surface_create (PlatformDisplay *display,
+                                       EGLProxyConfig *egl_config,
+                                       SurfaceAttributes *attributes)
+{
+    UNUSED (display);
+    UNUSED (egl_config);
+    UNUSED (attributes);
+    return NULL;
+}
+
+void platform_pbuffer_surface_destroy (PlatformDisplay *display,
+                                       void *drawable)
+{
+    UNUSED (display);
+    UNUSED (drawable);
 }
