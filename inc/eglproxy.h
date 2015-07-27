@@ -140,12 +140,12 @@ void *platform_window_surface_create (PlatformDisplay *display,
                                       EGLProxyConfig *egl_config,
                                       SurfaceAttributes *attributes);
 void *platform_pbuffer_surface_create (PlatformDisplay *display,
-                                      EGLProxyConfig *egl_config,
-                                      SurfaceAttributes *attributes);
+                                       EGLProxyConfig *egl_config,
+                                       SurfaceAttributes *attributes);
 void platform_window_surface_destroy (PlatformDisplay *display,
                                       void *drawable);
 void platform_pbuffer_surface_destroy (PlatformDisplay *display,
-                                      void *drawable);
+                                       void *drawable);
 PlatformDisplay *platform_display_create (const PlatformDisplayAttributes
         *attributes);
 void platform_display_destroy (PlatformDisplay *display,
