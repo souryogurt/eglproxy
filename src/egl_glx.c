@@ -104,11 +104,10 @@ int window_is_match_config (PlatformDisplay *display, EGLNativeWindowType win,
 
 void *platform_window_surface_create (PlatformDisplay *display,
                                       EGLProxyConfig *egl_config,
-                                      EGLNativeWindowType win,
                                       SurfaceAttributes *attributes)
 {
+    EGLNativeWindowType win = attributes->specific.window.id;
     GLXDrawable result = win;
-    UNUSED (attributes);
     if (display->is_modern) {
         GLXFBConfig glx_config = (GLXFBConfig) egl_config->platform;
         result = glXCreateWindow (display->x11_display, glx_config, win, NULL);
@@ -643,4 +642,32 @@ EGLBoolean window_is_valid (PlatformDisplay *display, EGLNativeWindowType win)
     UNUSED (display);
     /* TODO: Write more better check */
     return win != 0;
+}
+
+void *platform_pbuffer_surface_create (PlatformDisplay *display,
+                                       EGLProxyConfig *egl_config,
+                                       SurfaceAttributes *attributes)
+{
+    GLXDrawable result = NULL;
+    int attrib_list[] = {
+        GLX_PBUFFER_WIDTH, 0,
+        GLX_PBUFFER_HEIGHT, 0,
+        GLX_LARGEST_PBUFFER, False,
+        GLX_PRESERVED_CONTENTS, True
+    };
+    attrib_list[1] = attributes->specific.pbuffer.width;
+    attrib_list[3] = attributes->specific.pbuffer.height;
+    attrib_list[5] = (attributes->specific.pbuffer.largest_pbuffer == EGL_TRUE) ?
+                     True : False;
+    if (display->is_modern) {
+        GLXFBConfig glx_config = (GLXFBConfig) egl_config->platform;
+        result = glXCreatePbuffer (display->x11_display, glx_config,
+                                   attrib_list);
+    }
+    return (void *) result;
+}
+
+void platform_pbuffer_surface_destroy (PlatformDisplay *display, void *drawable)
+{
+    glXDestroyPbuffer (display->x11_display, (GLXDrawable) drawable);
 }
