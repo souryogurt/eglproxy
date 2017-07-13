@@ -907,7 +907,7 @@ EGLAPI EGLBoolean EGLAPIENTRY eglMakeCurrent (EGLDisplay dpy, EGLSurface draw,
             eglSetError (EGL_BAD_MATCH);
             return EGL_FALSE;
         }
-    } else if (ctx != EGL_NO_CONTEXT) {
+    } else {
         if (draw != EGL_NO_SURFACE && read != EGL_NO_SURFACE) {
             /* TODO: Check context and surfaces */
         } else {

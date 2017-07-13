@@ -517,13 +517,16 @@ static EGLint glx_populate_from_visualinfos (PlatformDisplay *display,
                                 (int *) &egl_config->stencil_size);
         }
         egl_config->surface_type = EGL_WINDOW_BIT | EGL_PIXMAP_BIT;
-        egl_config->bind_to_texture_rgb = ((egl_config->renderable_type &
-                                            EGL_OPENGL_ES_BIT)
-                                           && (egl_config->surface_type & EGL_PBUFFER_BIT)) ? EGL_TRUE : EGL_FALSE;
-        egl_config->bind_to_texture_rgba = ((egl_config->renderable_type &
-                                             EGL_OPENGL_ES_BIT)
-                                            && (egl_config->surface_type & EGL_PBUFFER_BIT)) ? EGL_TRUE : EGL_FALSE;
-
+        egl_config->bind_to_texture_rgb = EGL_FALSE;
+        if ((egl_config->renderable_type & EGL_OPENGL_ES_BIT)
+                && (egl_config->surface_type & EGL_PBUFFER_BIT)) {
+            egl_config->bind_to_texture_rgb = EGL_TRUE;
+        }
+        egl_config->bind_to_texture_rgba = EGL_FALSE;
+        if ((egl_config->renderable_type & EGL_OPENGL_ES_BIT)
+                && (egl_config->surface_type & EGL_PBUFFER_BIT)) {
+            egl_config->bind_to_texture_rgba = EGL_TRUE;
+        }
 
         egl_config->transparent_type = EGL_NONE;
         if ((display->is_ext_visual_info)
@@ -648,7 +651,7 @@ void *platform_pbuffer_surface_create (PlatformDisplay *display,
                                        EGLProxyConfig *egl_config,
                                        SurfaceAttributes *attributes)
 {
-    GLXDrawable result = NULL;
+    GLXDrawable result = (GLXDrawable)NULL;
     int attrib_list[] = {
         GLX_PBUFFER_WIDTH, 0,
         GLX_PBUFFER_HEIGHT, 0,
