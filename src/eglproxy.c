@@ -393,6 +393,10 @@ EGLAPI EGLBoolean EGLAPIENTRY eglChooseConfig (EGLDisplay dpy,
     selected_configs = (EGLProxyConfigEntry *) calloc ((size_t)
                        egl_display->n_configs,
                        sizeof (EGLProxyConfigEntry));
+    if (!selected_configs) {
+        eglSetError (EGL_BAD_ALLOC);
+        return EGL_FALSE;
+    }
     n_selected_configs = select_config (egl_display, selected_configs, &query);
     if ((configs == NULL) || (n_selected_configs == 0)) {
         *num_config = n_selected_configs;
